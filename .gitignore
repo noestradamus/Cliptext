@@ -64,6 +64,12 @@ models/
 *.key
 *.p12
 *.pfx
+*.jks
+*.keystore
+android/.gradle/
+android/local.properties
+android/releases/
+android/private/
 .openai/
 .impeccable/
 .sites-runtime/
@@ -92,5 +98,6 @@ launch.json
 ready.json
 ready-*.json
 service-config.json
+phone-sync/
 Screenshot*.png
 library-live.png

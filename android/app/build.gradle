@@ -1,0 +1,23 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'life.cliptext.save'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'life.cliptext.save'
+        minSdk 26
+        targetSdk 35
+        versionCode 6
+        versionName '0.6.0'
+        testInstrumentationRunner 'life.cliptext.save.OfflineStorageTest'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildTypes {
+        release { minifyEnabled false }
+    }
+}
+
+dependencies { testImplementation 'junit:junit:4.13.2' }

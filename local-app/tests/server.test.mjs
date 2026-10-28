@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
+import { randomUUID } from 'node:crypto';
 import { createServer as tcpServer } from 'node:net';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -304,7 +306,7 @@ test('a second process cannot open or migrate an active local library', async t 
   const context = await openApp(t, directory);
   const upgrade = join(directory, 'upgrade-migrations');
   await cp(migrationsDir, upgrade, { recursive: true });
-  await writeFile(join(upgrade, '0011_active_library_test.sql'), 'CREATE TABLE active_library_must_not_be_migrated(id TEXT);');
+  await writeFile(join(upgrade, '0013_active_library_test.sql'), 'CREATE TABLE active_library_must_not_be_migrated(id TEXT);');
   const result = await child([serverMain, '--data-dir', context.app.runtime.dataDir,
     '--client-dir', clientDir, '--migrations-dir', upgrade, '--engine-bundle', join(directory, 'missing'),
     '--models-dir', join(directory, 'missing'), '--port', '0', '--no-engine']);
@@ -346,4 +348,81 @@ test('CLI readiness publication failure exits promptly and releases its listenin
   const listener = tcpServer();
   await new Promise((accept, reject) => { listener.once('error', reject); listener.listen(port, '127.0.0.1', accept); });
   await new Promise((accept, reject) => listener.close(error => error ? reject(error) : accept()));
+});
+
+test('paired phone delivery and offline-library changes survive a real Mac server restart', async t => {
+  const directory = await temporary(t);
+  let context = await openApp(t, directory, { phonePort: 0 });
+  assert.equal((await fetch(context.app.origin + '/api/local/phone')).status, 401);
+  const enabled = await context.json('/api/local/phone', 'POST', { action: 'enable' });
+  assert.equal(enabled.response.status, 200);
+  assert.equal(enabled.value.error, undefined);
+  assert.equal(enabled.value.enabled, true);
+  const originalPin = enabled.value.fingerprint;
+  const identity = JSON.parse(await readFile(join(directory, 'data', 'phone-sync', 'identity.json'), 'utf8'));
+  const paired = await context.json('/api/local/phone', 'POST', { action: 'pair' });
+  assert.equal(paired.response.status, 200);
+  const capability = JSON.parse(Buffer.from(paired.value.code, 'base64url').toString());
+  assert.equal(capability.fingerprint, originalPin);
+  let port = enabled.value.port;
+  const phone = (path, payload, token = capability.token) => new Promise((accept, reject) => {
+    const request = httpsRequest({ hostname: '127.0.0.1', port, path,
+      method: payload === undefined ? 'GET' : 'POST', ca: identity.cert,
+      checkServerIdentity: (_hostname, certificate) => certificate.fingerprint256.replaceAll(':', '').toLowerCase() === originalPin ? undefined : new Error('Wrong Mac certificate'),
+      headers: { Authorization: 'Bearer ' + token, ...(payload === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    }, response => {
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('error', reject);
+      response.on('end', () => accept({ status: response.statusCode, value: JSON.parse(Buffer.concat(chunks).toString()) }));
+    });
+    request.on('error', reject);
+    request.end(payload === undefined ? undefined : JSON.stringify(payload));
+  });
+  assert.equal((await phone('/api/phone/sync')).status, 401, 'A pending pairing code cannot read the library.');
+  const bootstrapToken = capability.token;
+  const connected = await phone('/api/phone/pair', { name: 'Test phone' });
+  assert.equal(connected.status, 200);
+  assert.match(connected.value.token, /^[A-Za-z0-9_-]{43}$/);
+  assert.notEqual(connected.value.token, bootstrapToken);
+  capability.token = connected.value.token;
+  assert.equal((await phone('/api/phone/sync', undefined, bootstrapToken)).status, 401, 'The QR bootstrap cannot read transcripts after pairing.');
+  assert.equal((await phone('/api/worker/claim', {})).status, 404);
+  assert.equal((await phone('/api/local/phone')).status, 404);
+  const requestId = randomUUID();
+  const submission = { requestId, url: 'https://youtu.be/klmnopqrstU' };
+  const delivered = await phone('/api/phone/links', submission);
+  assert.equal(delivered.status, 200);
+  const id = delivered.value.jobId;
+  assert.equal((await phone('/api/phone/links', submission)).value.jobId, id, 'An acknowledgement retry must not duplicate a link.');
+  const claim = await context.worker('/api/worker/claim');
+  assert.equal(claim.value.job.id, id);
+  assert.equal((await context.worker('/api/worker/jobs/' + id, 'PATCH', {
+    leaseToken: claim.value.job.leaseToken, status: 'completed', contentKind: 'video',
+    title: 'Offline reading', transcript: 'This transcript stays on the phone after synchronization.',
+    segments: [{ start: 0, end: 5, text: 'This transcript stays on the phone after synchronization.' }],
+  })).response.status, 200);
+  const synced = await phone('/api/phone/sync?cursor=0&limit=50');
+  assert.equal(synced.status, 200);
+  assert.ok(synced.value.changes.some(change => change.id === id && change.job?.transcript.includes('stays on the phone')));
+  const cursor = synced.value.cursor;
+  await context.close();
+  await assert.rejects(phone('/api/phone/sync?cursor=' + cursor), /ECONNREFUSED|socket hang up|ECONNRESET/);
+  context = await openApp(t, directory, { phonePort: 0 });
+  const resumed = await context.json('/api/local/phone');
+  assert.equal(resumed.value.enabled, true);
+  assert.equal(resumed.value.fingerprint, originalPin);
+  port = resumed.value.port;
+  assert.equal((await phone('/api/phone/links', submission)).value.jobId, id);
+  assert.equal((await context.json('/api/jobs')).value.total, 1);
+  assert.equal((await context.json('/api/jobs/' + id, 'PATCH', { notes: 'Readable offline too.' })).response.status, 200);
+  let changes = await phone('/api/phone/sync?cursor=' + cursor);
+  assert.ok(changes.value.changes.some(change => change.job?.notes === 'Readable offline too.'));
+  assert.equal((await context.json('/api/jobs/' + id, 'DELETE')).response.status, 200);
+  changes = await phone('/api/phone/sync?cursor=' + changes.value.cursor);
+  assert.ok(changes.value.changes.some(change => change.id === id && change.deleted));
+  await context.json('/api/local/phone', 'POST', { action: 'revoke', deviceId: capability.deviceId });
+  assert.equal((await phone('/api/phone/sync')).status, 401);
+  await context.json('/api/local/phone', 'POST', { action: 'disable' });
+  await assert.rejects(phone('/api/phone/sync'), /ECONNREFUSED|socket hang up|ECONNRESET/);
 });

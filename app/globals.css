@@ -275,6 +275,33 @@ select { background: var(--surface); border: 0; border-radius: 9px; box-shadow: 
 .setup-card summary { cursor: pointer; font-size: 13px; font-weight: 600; min-height: 36px; }
 .setup-card details p, .setup-note { font-size: 12px; line-height: 1.7; color: var(--muted); }
 .setup-return { text-decoration: none; margin: 12px 0; }
+.local-phone-card { min-width: 0; }
+.local-phone-card .local-phone-note { margin: -6px 0 18px; }
+.local-phone-actions, .local-phone-code-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.local-phone-actions .button-secondary, .local-phone-code-actions .button-secondary { min-height: 44px; }
+.local-phone-card .engine-state { max-width: none; white-space: nowrap; }
+.local-phone-pairing { margin-top: 26px; }
+.local-phone-qr { display: block; width: min(100%, 240px); height: auto; aspect-ratio: 1; margin: 0 auto 20px; background: #fff; }
+.local-phone-card .local-phone-scan { margin: -6px 0 18px; text-align: center; }
+.local-phone-code-actions { justify-content: space-between; }
+.local-phone-code-actions .setup-note { font-variant-numeric: tabular-nums; }
+.local-phone-card .local-phone-code-details { margin-top: 18px; border-top: 0; padding-top: 0; }
+.local-phone-code { display: block; width: 100%; resize: vertical; min-height: 92px; max-height: 220px; padding: 12px; border: 0; border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--inset-small); font-family: monospace; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.local-phone-devices { list-style: none; margin: 24px 0 0; padding: 0; }
+.local-phone-card .local-phone-devices > li { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 16px 0; border-top: 1px solid var(--line); }
+.local-phone-devices > li > div { min-width: 0; }
+.local-phone-devices strong { display: block; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.local-phone-devices span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.local-phone-devices .text-button { flex-shrink: 0; min-height: 44px; }
+.local-phone-details dl { margin: 0; }
+.local-phone-details dl > div + div { margin-top: 14px; }
+.local-phone-details dt { color: var(--muted); font-size: 11px; }
+.local-phone-details dd { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.local-phone-address-form { margin: 18px 0 22px; }
+.local-phone-address-form label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 500; }
+.local-phone-address-form > div { display: flex; align-items: center; gap: 12px; }
+.local-phone-address-form input { min-width: 0; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--inset-small); font-size: 12px; }
+.local-phone-address-form .text-button { flex-shrink: 0; min-height: 44px; }
 .pairing-finish .setup-return { display: flex; width: 100%; margin: 22px 0 10px; }
 .connected-device { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 18px; }
 .connected-device strong { font-size: 14px; }

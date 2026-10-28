@@ -29,8 +29,8 @@ export async function api(action: () => Promise<Response>) {
 export async function owner() {
   const user = await getChatGPTUser();
   if (!user) throw new ApiError(401, 'Please sign in to your private transcript library.');
-  // A single shared library is deliberate: this Site is verified owner-private.
-  // Service-ingested links (for example from an optional bot) belong to that library.
+  // The standalone Mac owns one local library. Paired phone submissions enter
+  // that same library through the separately authenticated phone transport.
   return 'owner';
 }
 
@@ -41,10 +41,9 @@ export function sameOrigin(request: Request) {
   }
 }
 
-/** These routes are behind the owner-private Sites dispatch boundary.
- * Dispatch validates OAI-Sites-Authorization for the local engine and consumes it.
- * The Mac-only key separately protects engine operations from paired submitters.
- * Never make this Site public without replacing this service-access boundary.
+/** The loopback dispatcher checks the private engine bearer and key before
+ * these routes run. Paired phones have a separate, restricted TLS dispatcher
+ * that never exposes worker operations or desktop session credentials.
  */
 export function engineRequest(request: Request) {
   if (request.headers.get('X-Cliptext-Engine') !== '1') throw new ApiError(403, 'This endpoint is for the local transcription engine.');
