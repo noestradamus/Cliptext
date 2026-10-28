@@ -98,5 +98,6 @@ launch.json
 ready.json
 ready-*.json
 service-config.json
+phone-sync/
 Screenshot*.png
 library-live.png
