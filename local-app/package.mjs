@@ -31,10 +31,10 @@ for (const name of names) {
 await rm(join(output, 'engine', 'engine', '__pycache__'), { recursive: true, force: true });
 const engineManifestPath = join(output, 'engine', 'resources', 'engine-manifest.json');
 const engineManifest = JSON.parse(await readFile(engineManifestPath, 'utf8'));
-await writeFile(engineManifestPath, JSON.stringify({ ...engineManifest, version: '0.2.1', sourceSha256: sources }, null, 2) + '\n');
-const manifest = { format: 'cliptext-local-app', version: '0.2.1', architecture: 'arm64', minimumMacOS: '26.2',
+await writeFile(engineManifestPath, JSON.stringify({ ...engineManifest, version: '0.3.0', sourceSha256: sources }, null, 2) + '\n');
+const manifest = { format: 'cliptext-local-app', version: '0.3.0', architecture: 'arm64', minimumMacOS: '26.2',
   publicReleaseReady: false, interface: 'existing-react-client', storage: 'local-sqlite-and-files',
-  processing: 'packaged-python-mlx-vision', hostedRuntimeRequired: false, phoneSyncIncluded: false, sources };
+  processing: 'packaged-python-mlx-vision', hostedRuntimeRequired: false, phoneSyncIncluded: true, sources };
 await writeFile(join(output, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 const launcher = join(output, 'Start Cliptext.command');
 await writeFile(launcher, `#!/bin/sh
@@ -46,5 +46,5 @@ export NODE_NO_WARNINGS=1
 exec "$cliptext_app_root/engine/bin/node" "$cliptext_app_root/server/main.mjs" --open "$@"
 `);
 await chmod(launcher, 0o755);
-await writeFile(join(output, 'README.txt'), 'Cliptext local prototype\n\nDouble-click Start Cliptext.command. Keep its Terminal window open while using Cliptext.\nThe interface opens in your browser; the library and processing run on this Mac.\nDefault library: ~/Library/Application Support/Cliptext\nStop: press Control-C in its Terminal window.\n\nThis package is the local interface/server/engine. A native Mac container can be built with local-app/build-mac.mjs; Android synchronization is a later milestone.\nModels are already prepared in the models folder. No Sites account, Homebrew, installed Python or Node is required to run it.\n\nApple Silicon, macOS26.2+. Local prototype; not notarized/public-distribution ready.\n');
+await writeFile(join(output, 'README.txt'), 'Cliptext local prototype\n\nDouble-click Start Cliptext.command. Keep its Terminal window open while using Cliptext.\nThe interface opens in your browser; the library and processing run on this Mac.\nDefault library: ~/Library/Application Support/Cliptext\nStop: press Control-C in its Terminal window.\n\nIn Sharing setup, enable Phone sharing and pair Cliptext Share for Android. The phone queues links until the Mac is reachable and keeps synced transcripts offline. Sync requires the same network or a private VPN such as Tailscale; Android may delay background jobs.\nModels are already prepared in the models folder. No Sites account, Homebrew, installed Python or Node is required to run it.\n\nApple Silicon, macOS26.2+. Local prototype; not notarized/public-distribution ready.\n');
 console.log(JSON.stringify({ package: output, hostedRuntimeRequired: false, modelsIncluded: true }));

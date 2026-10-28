@@ -63,13 +63,13 @@ try {
   for (const directory of ['engine', 'models', 'server', 'client', 'migrations']) {
     run('/bin/cp', ['-cR', join(source, directory), join(resources, directory)]);
   }
-  // Hosted companion installers are unrelated to the local sync milestone.
+  // Installers are delivered separately; they are not part of the web client.
   await rm(join(resources, 'client', 'downloads'), { recursive: true, force: true });
   await rm(join(resources, 'client', 'manifest.webmanifest'), { force: true });
   const iconSource = join(source, 'client', 'icon-512.png');
   run('/usr/bin/sips', ['-s', 'format', 'icns', iconSource, '--out', join(resources, 'AppIcon.icns')]);
   const symlinks = await checkSymlinks(resources);
-  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: '0.2.1',
+  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: '0.3.0',
     framework: 'AppKit + WKWebView', architecture: 'arm64', minimumMacOS: '26.2', signature: 'ad-hoc', notarized: false,
     publicReleaseReady: false, modelsIncluded: true, resourceSymlinks: symlinks,
     config: { dataDirectoryArgument: '--data-dir', dataDirectoryEnvironment: 'CLIPTEXT_DATA_DIR', portArgument: '--port', portEnvironment: 'CLIPTEXT_PORT' },

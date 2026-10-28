@@ -64,6 +64,12 @@ models/
 *.key
 *.p12
 *.pfx
+*.jks
+*.keystore
+android/.gradle/
+android/local.properties
+android/releases/
+android/private/
 .openai/
 .impeccable/
 .sites-runtime/

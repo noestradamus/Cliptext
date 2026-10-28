@@ -1,6 +1,6 @@
 {
   "name": "cliptext",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "exceljs": "4.4.0",
+    "qrcode-generator": "2.0.4",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },

@@ -14,8 +14,10 @@ The interface, SQLite database, media processing, and AI models run on each user
 - Export CSV/Excel by collection or save/restore a library backup.
 - Choose appearance presets, custom colors, and fonts.
 - Open the retained React interface in an AppKit/WKWebView Mac window.
+- Pair the Android helper directly with the Mac using a QR code.
+- Queue shared links on Android until the Mac is reachable, then retain synced transcripts for offline reading.
 
-**Target:** Apple Silicon, macOS 26.2 or later. This is a private development snapshot, not a notarized public release. Android queue/synchronization and offline phone reading are planned, not included.
+**Target:** Apple Silicon, macOS 26.2 or later; Android 8.0 or later for the companion. This is a private development snapshot, not a notarized public release. See [Android setup and build](android/README.md) for companion installation and device-verification limits.
 
 ## What is in this repository
 
@@ -68,7 +70,11 @@ Use fresh output directories. Build details and runtime behavior are in [local-a
 
 ## Data and process ownership
 
-The default library lives in `~/Library/Application Support/Cliptext`. Its SQLite database, private images, processing checkpoints, and logs belong to that Mac user. Closing the native window keeps processing alive; **Quit Cliptext** stops its own server and worker. The HTTP interface binds to loopback only. Phone pairing is not enabled in this version.
+The default library lives in `~/Library/Application Support/Cliptext`. Its SQLite database, private images, processing checkpoints, and logs belong to that Mac user. Closing the native window keeps processing alive; **Quit Cliptext** stops its own server and worker. The desktop interface binds to loopback only. Enabling phone sharing starts a separate HTTPS listener on port 47322, restricted to paired-device link submission and transcript sync. The desktop session, settings, worker operations, and file paths are never exposed by that listener.
+
+Pair in **Sharing setup → Phone sharing**. The helper stores links before attempting delivery and stores synced text on the phone. The Mac remains the source of truth; the phone library is read-only. No Sites hosting or shared Cliptext queue is involved. Links saved while the Mac is asleep remain on Android until it is reachable. Android battery policies can delay automatic sync; **Sync now** runs it explicitly.
+
+For local delivery, both devices must be on a network that allows them to reach each other. For delivery away from home, install [Tailscale](https://tailscale.com/download) on both devices and join the same private network. Use the Mac's Tailscale address in the helper connection if pairing happened before Tailscale was enabled. Tailscale provides connectivity, not Cliptext storage or transcription. Neither networking option wakes a sleeping or powered-off Mac. Transcript text already synced to the phone remains readable without either connection.
 
 Public retrieval does not import browser logins. Posts that require account access or that are removed/restricted can fail. The TikTok downloader keeps metadata extraction and media download in the same temporary anonymous session; new jobs do not rely on pre-supplied media.
 
@@ -79,6 +85,6 @@ Unit tests use synthetic identifiers and data. The optional live verification ru
 - Test installation on a second clean Mac.
 - Complete native signing/notarization and binary-distribution license obligations.
 - Choose the license for Cliptext itself and finish release/contributor documentation.
-- Add Android delivery, pairing, and an offline phone library in a later milestone.
+- Verify Android installation, quiet sharing, sleep/reconnect, and offline reading on a physical phone.
 
 No open-source license for Cliptext itself has been selected yet. Dependencies and included fonts retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

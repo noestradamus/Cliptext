@@ -15,6 +15,7 @@ For development, Node 22.23.4 is pinned. Runtime data defaults to `~/Library/App
 | `engine/` | Processing checkpoints, temporary files, and caches. |
 | `logs/` | Local diagnostics. |
 | `migration-backups/` | SQLite snapshots created before later schema upgrades. |
+| `phone-sync/` | Private TLS identity for paired Android connections. |
 
 A held SQLite lock prevents simultaneous migration/opening of one library. Startup recovers interrupted processing leases. The app supervises its own worker; closing the window preserves processing, and Quit stops the app-owned processes.
 
@@ -24,6 +25,16 @@ The server listens on 127.0.0.1 and checks Host/Origin, private session cookies,
 
 Shared route source retains two compile-time compatibility imports. The build resolves `cloudflare:workers` to local SQLite/files bindings and the former auth import to the local owner adapter. These aliases do not load Cloudflare or ChatGPT runtime services.
 
+## Android synchronization
+
+Phone sharing is disabled by default. Enable it in Sharing setup, then scan the pairing QR with the phone camera or paste the pairing code into Cliptext Share. Pairing codes expire after ten minutes. They contain a device capability and the Mac's certificate fingerprint; treat them as private. Credentials and TLS files are not part of library exports or the repository.
+
+An independent TLS listener on port 47322 permits only pairing, link submission, and library sync. The phone pins the exact paired certificate and stores credentials using AndroidKeyStore. No browser cookies, Sites login, or media download is involved in phone delivery. Revoke a phone from Sharing setup to stop its future requests. Revocation cannot erase a disconnected device's existing offline copy.
+
+SQLite records durable change cursors and deletion tombstones. Android applies each sync page and its cursor atomically; retries use durable request IDs and canonical link deduplication. The phone stores transcript text, carousel text, notes, tags, and collection information, rather than downloading source videos. Local Wi-Fi and optional Tailscale connectivity use the same protocol. Android's scheduler controls background timing; waking the Mac does not guarantee an immediate phone job.
+
+The TLS identity is generated with macOS's built-in `/usr/bin/openssl` when sharing is first enabled. Runtime operation does not require Xcode, Homebrew, or an installed development interpreter. Keep that identity with the Mac library; changing it requires pairing the phone again.
+
 ## Verification
 
 Run `npm run build`, `npm run typecheck`, and `npm run test:node`. These tests exercise real SQLite/files, local HTTP sessions, persistence, backup/export, and owned-process lifecycle with synthetic worker fixtures. They do not establish speech/OCR accuracy or a second physical Mac installation.
@@ -32,4 +43,4 @@ Run `npm run build`, `npm run typecheck`, and `npm run test:node`. These tests e
 
 ## Remaining scope
 
-The current target is Apple Silicon/macOS26.2+. Prototype signatures are ad hoc; public signing/notarization, complete binary redistribution notices/source obligations, and second-Mac acceptance remain release work. Android pairing, queued sharing, and offline phone reading are not included. Library backups currently omit custom theme/appearance settings.
+The current target is Apple Silicon/macOS26.2+. Prototype signatures are ad hoc; public signing/notarization, complete binary redistribution notices/source obligations, second-Mac acceptance, and physical Android acceptance remain release work. Library backups currently omit custom theme/appearance settings and device connections.

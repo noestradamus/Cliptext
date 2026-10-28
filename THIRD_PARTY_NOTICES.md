@@ -6,7 +6,9 @@ Third-party components retain their own copyright and license terms. A binary di
 
 ## JavaScript dependencies
 
-The direct and transitive application/build dependencies are recorded in `package.json` and `package-lock.json`, including React, React DOM, ExcelJS, Vite, TypeScript, Tailwind CSS, and esbuild. Their upstream licenses apply independently of Cliptext's license status. Preserve the applicable notices when distributing dependencies or bundled output.
+The direct and transitive application/build dependencies are recorded in `package.json` and `package-lock.json`, including React, React DOM, ExcelJS, Vite, TypeScript, Tailwind CSS, esbuild, and the MIT-licensed `qrcode-generator` used for local pairing codes. Their upstream licenses apply independently of Cliptext's license status. Preserve the applicable notices when distributing dependencies or bundled output.
+
+The Android helper uses Android platform APIs without bundled runtime libraries. Its portable build inputs (AAPT2, R8/D8, apksig, and compile-only AOSP framework JAR) are identified in `android/tools/PORTABLE-BUILD.md`. They remain external build tools rather than APK runtime contents.
 
 The engine bundler separately pins the official Node.js 22.23.4 runtime. Its distribution includes Node.js and bundled-component license notices; preserve those materials in any runtime package.
 
