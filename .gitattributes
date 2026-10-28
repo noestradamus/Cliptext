@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+# Preserve upstream font license notices byte-for-byte.
+public/fonts/OFL.txt -text -whitespace
+public/fonts/licenses/*.txt -text -whitespace

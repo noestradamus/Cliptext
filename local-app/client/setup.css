@@ -1,0 +1,13 @@
+.local-setup-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.local-setup-heading h2 { margin: 0; }
+.local-setup-page .setup-header .text-button { margin-bottom: 16px; }
+.local-setup-page .setup-header .text-button svg { transform: rotate(180deg); }
+.local-setup-values, .local-setup-paths { margin: 0; }
+.local-setup-values > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; }
+.local-setup-values > div + div { border-top: 1px solid var(--line); }
+.local-setup-values dt, .local-setup-paths dt { color: var(--muted); }
+.local-setup-values dd, .local-setup-paths dd { margin: 0; }
+.local-setup-values dd { text-align: right; }
+.local-setup-paths > div + div { margin-top: 14px; }
+.local-setup-paths dd { font-size: 12px; overflow-wrap: anywhere; }
+.local-setup-page .local-setup-pending { margin: 0; color: var(--muted); }

@@ -1,0 +1,38 @@
+{
+  "name": "cliptext",
+  "version": "0.2.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.23.4 <23"
+  },
+  "scripts": {
+    "build": "node local-app/build.mjs",
+    "local:build": "node local-app/build.mjs",
+    "start": "node local-app/dist/server/main.mjs",
+    "local:start": "node local-app/dist/server/main.mjs",
+    "package:local": "node local-app/package.mjs",
+    "package:mac": "node local-app/build-mac.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && npm run typecheck && npm run test:node && npm run test:python",
+    "test:node": "node --experimental-transform-types --test tests/*.test.mjs local-app/tests/*.test.mjs",
+    "test:python": "\"${CLIPTEXT_PYTHON:-python3}\" -m unittest discover -s local-worker -p 'test_*.py' && \"${CLIPTEXT_PYTHON:-python3}\" -m unittest discover -s local-worker/packaging -p 'test_*.py'"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "esbuild": "0.28.0",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vite": "8.0.13"
+  }
+}
