@@ -41,7 +41,7 @@ if (await exists(output)) {
   const active = spawnSync('/usr/bin/pgrep', ['-x', 'Cliptext'], { encoding: 'utf8' });
   if (active.status !== 1) throw new Error('Quit running Cliptext processes before replacing the app.');
 }
-for (const directory of ['engine', 'models', 'server', 'client', 'migrations']) {
+for (const directory of ['engine', 'models', 'server', 'client', 'pwa', 'migrations']) {
   if (!(await stat(join(source, directory))).isDirectory()) throw new Error(`Package is missing ${directory}.`);
 }
 await mkdir(dirname(output), { recursive: true });
@@ -60,7 +60,7 @@ try {
   await cp(executable, join(contents, 'MacOS', 'Cliptext'));
   await cp(join(here, 'mac', 'Info.plist'), join(contents, 'Info.plist'));
   await writeFile(join(contents, 'PkgInfo'), 'APPL????');
-  for (const directory of ['engine', 'models', 'server', 'client', 'migrations']) {
+  for (const directory of ['engine', 'models', 'server', 'client', 'pwa', 'migrations']) {
     run('/bin/cp', ['-cR', join(source, directory), join(resources, directory)]);
   }
   // Installers are delivered separately; they are not part of the web client.
@@ -69,7 +69,7 @@ try {
   const iconSource = join(source, 'client', 'icon-512.png');
   run('/usr/bin/sips', ['-s', 'format', 'icns', iconSource, '--out', join(resources, 'AppIcon.icns')]);
   const symlinks = await checkSymlinks(resources);
-  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: '0.3.0',
+  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: '0.4.0',
     framework: 'AppKit + WKWebView', architecture: 'arm64', minimumMacOS: '26.2', signature: 'ad-hoc', notarized: false,
     publicReleaseReady: false, modelsIncluded: true, resourceSymlinks: symlinks,
     config: { dataDirectoryArgument: '--data-dir', dataDirectoryEnvironment: 'CLIPTEXT_DATA_DIR', portArgument: '--port', portEnvironment: 'CLIPTEXT_PORT' },

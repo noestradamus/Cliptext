@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import qrcode from 'qrcode-generator';
 import { CliptextIcon } from '../../app/library-controls';
+import WebConnection from './web-connection';
 
 type LocalConfig = {
   dataDir?: string;
@@ -294,6 +295,7 @@ export default function LocalSetup() {
         {configured.length > 0 && <details><summary>Files</summary><dl className="local-setup-paths">{configured.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>}
       </section>
       <PhoneConnection />
+      <WebConnection />
     </div>
   </main>;
 }

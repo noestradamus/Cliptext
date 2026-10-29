@@ -7,14 +7,14 @@
   <key>CFBundleIdentifier</key><string>life.cliptext.local</string>
   <key>CFBundleExecutable</key><string>Cliptext</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.3.0</string>
-  <key>CFBundleVersion</key><string>4</string>
+  <key>CFBundleShortVersionString</key><string>0.4.0</string>
+  <key>CFBundleVersion</key><string>5</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>26.2</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
   <key>NSAppTransportSecurity</key>
   <dict><key>NSAllowsLocalNetworking</key><true/></dict>
-  <key>NSLocalNetworkUsageDescription</key><string>Cliptext syncs links and transcripts with your paired Android phone.</string>
+  <key>NSLocalNetworkUsageDescription</key><string>Cliptext syncs links and transcripts with your paired phones.</string>
 </dict>
 </plist>

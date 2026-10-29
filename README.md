@@ -16,8 +16,11 @@ The interface, SQLite database, media processing, and AI models run on each user
 - Open the retained React interface in an AppKit/WKWebView Mac window.
 - Pair the Android helper directly with the Mac using a QR code.
 - Queue shared links on Android until the Mac is reachable, then retain synced transcripts for offline reading.
+- Install the iPhone PWA for offline transcripts and use a local-file-backed Save to Cliptext Shortcut.
 
 **Target:** Apple Silicon, macOS 26.2 or later; Android 8.0 or later for the companion. This is a private development snapshot, not a notarized public release. See [Android setup and build](android/README.md) for companion installation and device-verification limits.
+
+For iPhone installation, private HTTPS, offline behavior, and the Share-menu Shortcuts, see [iPhone setup](docs/iphone.md). The PWA syncs while open; Shortcuts retain their own local outbox when the Mac cannot be reached.
 
 ## What is in this repository
 

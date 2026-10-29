@@ -306,7 +306,7 @@ test('a second process cannot open or migrate an active local library', async t 
   const context = await openApp(t, directory);
   const upgrade = join(directory, 'upgrade-migrations');
   await cp(migrationsDir, upgrade, { recursive: true });
-  await writeFile(join(upgrade, '0013_active_library_test.sql'), 'CREATE TABLE active_library_must_not_be_migrated(id TEXT);');
+  await writeFile(join(upgrade, '0014_active_library_test.sql'), 'CREATE TABLE active_library_must_not_be_migrated(id TEXT);');
   const result = await child([serverMain, '--data-dir', context.app.runtime.dataDir,
     '--client-dir', clientDir, '--migrations-dir', upgrade, '--engine-bundle', join(directory, 'missing'),
     '--models-dir', join(directory, 'missing'), '--port', '0', '--no-engine']);

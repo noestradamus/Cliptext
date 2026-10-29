@@ -11,7 +11,7 @@ import { cachedThemeColors, paintTheme, resolvedThemeAppearance, THEME_CACHE_KEY
 
 type ThemeDraft = ThemeAppearance & { name: string };
 type ThemeSelection = Pick<ThemeLibrary, 'activeThemeId' | 'activePresetId'>;
-type ThemeContextValue = {
+export type ThemeContextValue = {
   library: ThemeLibrary;
   loading: boolean;
   error: string;
@@ -25,7 +25,7 @@ type ThemeContextValue = {
 };
 
 const emptyLibrary: ThemeLibrary = { themes: [], activeThemeId: null, activePresetId: 'glacial' };
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 async function themeRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, { ...init, cache: 'no-store', credentials: 'same-origin' });

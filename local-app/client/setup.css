@@ -11,3 +11,11 @@
 .local-setup-paths > div + div { margin-top: 14px; }
 .local-setup-paths dd { font-size: 12px; overflow-wrap: anywhere; }
 .local-setup-page .local-setup-pending { margin: 0; color: var(--muted); }
+.local-web-address { display: grid; gap: 12px; }
+.local-web-address input { width: 100%; min-width: 0; }
+.local-web-card .local-phone-actions { flex-wrap: wrap; margin-block: 16px; }
+.local-web-guide { margin-top: 20px; }
+.local-web-guide ol { margin: 16px 0 0; padding-left: 22px; }
+.local-web-guide li + li { margin-top: 10px; }
+.local-web-shortcut-code { margin-top: 16px; display: grid; gap: 12px; }
+.local-web-card code { overflow-wrap: anywhere; }

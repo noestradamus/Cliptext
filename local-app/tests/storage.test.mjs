@@ -24,7 +24,7 @@ test('migrates SQLite, keeps library/themes/search/images across close and reope
   await db.prepare("INSERT INTO appearance_themes(id,owner_id,name,name_key,accent,background,foreground,font,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
     .bind('t1', 'owner', 'Custom', 'custom', '#FF8E3C', '#FFFAEE', '#502E1A', 'dm-sans', '2026-10-28', '2026-10-28').run();
   await db.prepare('INSERT INTO appearance_settings(owner_id,active_theme_id,active_preset_id) VALUES(?,?,?)').bind('owner', 't1', 'glacial').run();
-  assert.equal(await db.prepare('SELECT count(*) AS total FROM schema_migrations').first('total'), 13);
+  assert.equal(await db.prepare('SELECT count(*) AS total FROM schema_migrations').first('total'), 14);
   assert.equal((await db.prepare("SELECT count(*) AS total FROM jobs_fts WHERE jobs_fts MATCH ?").bind('pricing').first()).total, 1);
   db.close();
   db = new LocalDatabase(directory, migrations);

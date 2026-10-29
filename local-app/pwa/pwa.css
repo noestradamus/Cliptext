@@ -1,0 +1,49 @@
+/* Same material and reading layout as the Mac; only phone-specific behavior. */
+.pwa-shell { padding-top: env(safe-area-inset-top); padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+.pwa-shell .app-layout { min-height: 0; }
+.pwa-shell .header-actions { gap: 12px; }
+.pwa-shell .pwa-sync { min-height: 44px; padding: 6px; font-size: 11px; }
+.pwa-shell .library-list-meta { font-size: 12px; }
+.pwa-shell .job-insights { margin: 0 34px; }
+.pwa-shell .result-title-group { width: 100%; }
+.pwa-organization { display: flex; flex-direction: column; gap: 12px; }
+.pwa-collection { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.pwa-organization .job-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.pwa-organization .tag { border: 0; min-height: 44px; }
+.pwa-shell .insight-takeaway-list { flex-basis: 100%; margin-top: 6px; }
+.pwa-shell .insight-takeaway-list[hidden] { display: none; }
+.pwa-notes p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pwa-connect { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.pwa-connect p { font-size: 12px; margin: 0; }
+.pwa-connect label { font-size: 12px; font-weight: 500; }
+.pwa-connect textarea { width: 100%; min-height: 86px; border: 0; border-radius: 12px; background: var(--surface); box-shadow: var(--inset); padding: 12px; font-size: 16px; resize: vertical; }
+.pwa-connect .button-primary { align-self: flex-start; min-height: 44px; }
+.pwa-pair-empty { padding: 12px; }
+.pwa-pair-empty h3 { font-size: 16px; margin: 0 0 15px; }
+.pwa-pair-empty .pwa-connect { max-width: 100%; }
+.pwa-connection-status { font-size: 12px; }
+.pwa-connection-status p { margin-bottom: 12px; }
+.pwa-install-help { font-size: 12px; margin: 16px 0; }
+.pwa-install-help summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.pwa-install-help p { margin: 4px 0 14px; }
+.pwa-tool-panel .danger-button { margin-top: 8px; }
+.pwa-queue-entry { position: relative; padding: 4px 44px 15px 0; overflow-wrap: anywhere; }
+.pwa-queue-entry > p { margin: 4px 0; font-size: 12px; }
+.pwa-queue-entry .reader-icon-action { position: absolute; top: 0; right: 0; }
+.pwa-row-count { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; }
+.pwa-queue-dot { display: inline-block; width: 5px; height: 5px; margin-left: 5px; border-radius: 50%; background: var(--blue); vertical-align: middle; }
+.pwa-mobile-only { display: none; }
+.pwa-tool-panel .pwa-filters { display: grid; }
+.pwa-tool-panel .pwa-filters select { min-height: 44px; font-size: 16px; }
+@media (max-width: 760px) {
+  .pwa-shell { --workspace-height: max(260px, calc(100dvh - 166px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .pwa-shell .job-insights { margin-left: 21px; margin-right: 21px; }
+  .pwa-shell .header-actions { gap: 4px; }
+  .pwa-tool-panel .pwa-mobile-only { display: flex; }
+  .pwa-shell .transcript-content { font-size: 16px; }
+  .pwa-shell .reader-primary-actions svg { display: block; }
+  .pwa-tool-panel { max-height: calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
+@media (min-width: 761px) {
+  .pwa-shell { padding-left: max(32px, env(safe-area-inset-left)); padding-right: max(32px, env(safe-area-inset-right)); }
+}

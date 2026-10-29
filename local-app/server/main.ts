@@ -12,11 +12,12 @@ import { initializeRuntime } from './bindings';
 import { dispatchRoute } from './routes';
 import { EngineSupervisor } from './engine';
 import { startPhoneSync } from './phone';
+import { startWebCompanion } from './web-companion';
 export { EngineSupervisor };
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 const MIMES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json' };
-export type AppOptions = { dataDir: string; clientDir: string; migrationsDir: string; engineBundle: string; modelsDir: string; engineScript?: string; port?: number; phonePort?: number; autoStartEngine?: boolean };
+export type AppOptions = { dataDir: string; clientDir: string; webClientDir?: string; migrationsDir: string; engineBundle: string; modelsDir: string; engineScript?: string; port?: number; phonePort?: number; webPort?: number; autoStartEngine?: boolean };
 
 function equal(left: string, right: string) {
   const a = Buffer.from(left), b = Buffer.from(right);
@@ -96,7 +97,8 @@ async function createOwnedApp(options: AppOptions, release: () => void, initiali
   function configuration() {
     return Response.json({ version: VERSION, dataDir, databasePath: runtime.databasePath,
       engineBundle: resolve(options.engineBundle), modelsDir: resolve(options.modelsDir), ...engine.readiness(),
-      worker: { running: engine.running, error: engine.error }, phoneSharing: phone.configuration().enabled });
+      worker: { running: engine.running, error: engine.error }, phoneSharing: phone.configuration().enabled,
+      webSharing: web.configuration().enabled });
   }
   function controlEngine(action: 'start' | 'stop') {
     const operation = engineControls.then(async () => {
@@ -140,6 +142,7 @@ async function createOwnedApp(options: AppOptions, release: () => void, initiali
       if (url.pathname === '/api/status' && method === 'GET') return status();
       if (url.pathname === '/api/local/config' && method === 'GET') return configuration();
       if (url.pathname === '/api/local/phone') return phone.handleAdmin(webRequest);
+      if (url.pathname === '/api/local/web') return web.handleAdmin(webRequest);
       if (url.pathname === '/api/local/engine' && method === 'POST') {
         let action: unknown;
         try { action = (await webRequest.json()).action; } catch { return fail('Choose an engine action.'); }
@@ -162,6 +165,8 @@ async function createOwnedApp(options: AppOptions, release: () => void, initiali
     return response;
   }
   const phone = await startPhoneSync({ DB, dataDir, port: options.phonePort });
+  const web = await startWebCompanion({ DB, clientDir: options.webClientDir ?? join(dirname(options.clientDir), 'pwa'), port: options.webPort })
+    .catch(async error => { await phone.close(); throw error; });
   const server = createServer(async (request, outgoing) => {
     try {
       const response = await handle(request);
@@ -184,6 +189,7 @@ async function createOwnedApp(options: AppOptions, release: () => void, initiali
   server.requestTimeout = 60_000;
   server.headersTimeout = 15_000;
   await new Promise<void>((accept, reject) => { server.once('error', reject); server.listen(options.port ?? 47321, '127.0.0.1', accept); }).catch(async error => {
+    await web.close();
     await phone.close();
     runtime.close(); throw error;
   });
@@ -201,6 +207,7 @@ async function createOwnedApp(options: AppOptions, release: () => void, initiali
       try {
         await engineControls;
         await engine.stop();
+        await web.close();
         await phone.close();
         server.closeIdleConnections();
         const drain = setTimeout(() => server.closeAllConnections(), 3000);
@@ -241,6 +248,7 @@ async function main() {
   }
   const app = await createLocalApp({ dataDir, engineBundle, modelsDir,
     clientDir: resolve(argument('--client-dir') ?? join(appRoot, 'client')),
+    webClientDir: resolve(argument('--web-client-dir') ?? join(appRoot, 'pwa')),
     migrationsDir: resolve(argument('--migrations-dir') ?? join(appRoot, 'migrations')),
     engineScript: argument('--engine-script'), port: requestedPort, autoStartEngine: !process.argv.includes('--no-engine') });
   const ready = { app: 'cliptext-local', version: VERSION, url: app.launchUrl, origin: app.origin, databasePath: app.runtime.databasePath, pid: process.pid };

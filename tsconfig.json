@@ -21,6 +21,8 @@
     "lib/**/*.ts",
     "local-app/client/**/*.ts",
     "local-app/client/**/*.tsx",
+    "local-app/pwa/**/*.ts",
+    "local-app/pwa/**/*.tsx",
     "local-app/server/**/*.ts",
     "local-app/vite.client.config.ts",
     "types/**/*.d.ts"

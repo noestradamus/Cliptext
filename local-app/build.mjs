@@ -7,6 +7,7 @@ import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 const app = dirname(fileURLToPath(import.meta.url));
 const root = dirname(app);
 await buildClient({ configFile: resolve(app, 'vite.client.config.ts') });
+await buildClient({ configFile: resolve(app, 'pwa/vite.config.ts') });
 await mkdir(resolve(app, 'dist/server'), { recursive: true });
 const result = await buildServer({
   entryPoints: [resolve(app, 'server/main.ts')], outfile: resolve(app, 'dist/server/main.mjs'),
