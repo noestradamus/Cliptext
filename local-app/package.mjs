@@ -18,7 +18,7 @@ function clone(from, to) {
 }
 clone(previous, join(output, 'engine'));
 clone(models, join(output, 'models'));
-for (const directory of ['client', 'server', 'migrations']) await cp(join(here, 'dist', directory), join(output, directory), { recursive: true });
+for (const directory of ['client', 'pwa', 'server', 'migrations']) await cp(join(here, 'dist', directory), join(output, directory), { recursive: true });
 await rm(join(output, 'client', 'downloads'), { recursive: true, force: true });
 await rm(join(output, 'server', 'build-inputs.json'), { force: true });
 const names = ['worker.py', 'local_service.py', 'standalone.py', 'insights.py', 'ocr.py', 'image_posts.py', 'checkpoints.py', 'local_processes.py', 'vision-ocr.swift'];
@@ -31,8 +31,8 @@ for (const name of names) {
 await rm(join(output, 'engine', 'engine', '__pycache__'), { recursive: true, force: true });
 const engineManifestPath = join(output, 'engine', 'resources', 'engine-manifest.json');
 const engineManifest = JSON.parse(await readFile(engineManifestPath, 'utf8'));
-await writeFile(engineManifestPath, JSON.stringify({ ...engineManifest, version: '0.3.0', sourceSha256: sources }, null, 2) + '\n');
-const manifest = { format: 'cliptext-local-app', version: '0.3.0', architecture: 'arm64', minimumMacOS: '26.2',
+await writeFile(engineManifestPath, JSON.stringify({ ...engineManifest, version: '0.4.0', sourceSha256: sources }, null, 2) + '\n');
+const manifest = { format: 'cliptext-local-app', version: '0.4.0', architecture: 'arm64', minimumMacOS: '26.2',
   publicReleaseReady: false, interface: 'existing-react-client', storage: 'local-sqlite-and-files',
   processing: 'packaged-python-mlx-vision', hostedRuntimeRequired: false, phoneSyncIncluded: true, sources };
 await writeFile(join(output, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');

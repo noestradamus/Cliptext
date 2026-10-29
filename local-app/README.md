@@ -35,6 +35,10 @@ SQLite records durable change cursors and deletion tombstones. Android applies e
 
 The TLS identity is generated with macOS's built-in `/usr/bin/openssl` when sharing is first enabled. Runtime operation does not require Xcode, Homebrew, or an installed development interpreter. Keep that identity with the Mac library; changing it requires pairing the phone again.
 
+## iPhone web companion
+
+The package includes a separate `pwa/` interface. Enable it in Sharing setup with the Mac’s HTTPS Tailscale hostname; Tailscale Serve forwards only to the opt-in companion listener on `127.0.0.1:47323`. Desktop authorization, worker routes, and native Android TLS remain separate. Pairing creates revocable browser sessions; Shortcuts receive a different submit-only capability. The PWA retains synced reading text in IndexedDB and precaches only its shell/assets. See [iPhone installation and offline behavior](../docs/iphone.md) and [Shortcut builds](../ios-shortcuts/README.md).
+
 ## Verification
 
 Run `npm run build`, `npm run typecheck`, and `npm run test:node`. These tests exercise real SQLite/files, local HTTP sessions, persistence, backup/export, and owned-process lifecycle with synthetic worker fixtures. They do not establish speech/OCR accuracy or a second physical Mac installation.

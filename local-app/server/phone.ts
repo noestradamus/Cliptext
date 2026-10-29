@@ -62,7 +62,7 @@ function object(text: string): Record<string, unknown> {
 }
 
 /** Transfer the effective reading copy, without source duplicates or Mac-only tools. */
-function phoneJob(row: Record<string, unknown>) {
+export function phoneJob(row: Record<string, unknown>) {
   const job = serializeJob(row);
   const insights = job.insights ? {
     summary: job.insights.summary,
