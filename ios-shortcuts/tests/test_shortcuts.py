@@ -31,6 +31,38 @@ class WorkflowSafetyTests(unittest.TestCase):
         self.assertLess(first_save, first_prompt)
         self.assertLess(first_save, first_network)
         self.assertFalse(actions[first_save]['WFWorkflowActionParameters']['WFSaveFileOverwrite'])
+    def test_get_urls_binds_shortcut_input_using_native_string_contract(self):
+        # iOS 27's first-party action catalog declares detect.link.WFInput as
+        # str. A WFTextTokenAttachment is discarded at runtime, producing zero
+        # URLs even when the Share Sheet or run-shortcut URL supplies input.
+        actions = self.workflows['Save to Cliptext']['WFWorkflowActions']
+        get_urls = [a for a in actions if a['WFWorkflowActionIdentifier'] == 'is.workflow.actions.detect.link']
+        self.assertEqual(len(get_urls), 1)
+        value = get_urls[0]['WFWorkflowActionParameters']['WFInput']
+        self.assertEqual(value['WFSerializationType'], 'WFTextTokenString')
+        self.assertEqual(value['Value']['string'], '\ufffc')
+        self.assertEqual(value['Value']['attachmentsByRange'], {'{0, 1}': {'Type': 'ExtensionInput'}})
+    def test_json_saves_name_the_content_before_file_conversion(self):
+        # iOS Save File converts unnamed text to .txt despite a .json Subpath.
+        # The outbox and connection must instead receive explicitly named .json
+        # content, or the next exact-path read cannot find the saved connection.
+        for name, workflow in self.workflows.items():
+            actions = workflow['WFWorkflowActions']
+            saves = [i for i, action in enumerate(actions)
+                     if action['WFWorkflowActionIdentifier'] == 'is.workflow.actions.documentpicker.save']
+            self.assertEqual(len(saves), 2 if name == 'Save to Cliptext' else 1)
+            for index in saves:
+                named = actions[index - 1]
+                self.assertEqual(named['WFWorkflowActionIdentifier'], 'is.workflow.actions.setitemname')
+                params = named['WFWorkflowActionParameters']
+                self.assertFalse(params['WFDontIncludeFileExtension'])
+                self.assertEqual(params['WFName']['WFSerializationType'], 'WFTextTokenString')
+                self.assertTrue(params['WFName']['Value']['string'].endswith('.json'))
+                saved = actions[index]['WFWorkflowActionParameters']
+                self.assertEqual(saved['WFFileDestinationPath'], params['WFName'])
+                self.assertEqual(saved['WFInput']['WFSerializationType'], 'WFTextTokenAttachment')
+                self.assertEqual(saved['WFInput']['Value']['Type'], 'ActionOutput')
+                self.assertEqual(saved['WFInput']['Value']['OutputUUID'], params['UUID'])
     def test_generic_templates_have_no_address_or_capability(self):
         for workflow in self.workflows.values():
             serialized = repr(workflow)
@@ -64,6 +96,34 @@ class WorkflowSafetyTests(unittest.TestCase):
             for action in workflow['WFWorkflowActions']:
                 for reference in visit(action['WFWorkflowActionParameters']): self.assertIn(reference, seen)
                 seen.add(action['WFWorkflowActionParameters']['UUID'])
+    def test_iterator_captures_follow_active_loop_depth_including_sequential_loops(self):
+        # Native nested loops expose Repeat Item 2; unqualified Repeat Item
+        # still refers to the outer pending file, which also has requestId but
+        # no receipt jobId. Sequential outer loops return to Repeat Item.
+        for name, workflow in self.workflows.items():
+            active, captures = [], []
+            actions = workflow['WFWorkflowActions']
+            for index, action in enumerate(actions):
+                params = action['WFWorkflowActionParameters']
+                is_repeat = action['WFWorkflowActionIdentifier'] == 'is.workflow.actions.repeat.each'
+                if is_repeat and params.get('WFControlFlowMode') == 0:
+                    active.append(params['GroupingIdentifier'])
+                capture = params.get('WFVariableName')
+                if capture in {'Shared URL', 'Pending File', 'Receipt'}:
+                    self.assertTrue(active)
+                    previous = actions[index - 1]
+                    self.assertEqual(previous['WFWorkflowActionIdentifier'], 'is.workflow.actions.repeat.each')
+                    self.assertEqual(previous['WFWorkflowActionParameters']['WFControlFlowMode'], 0)
+                    depth = len(active)
+                    expected = 'Repeat Item' if depth == 1 else 'Repeat Item ' + str(depth)
+                    self.assertEqual(params['WFInput']['Value'], {'Type': 'Variable', 'VariableName': expected})
+                    captures.append((capture, depth))
+                if is_repeat and params.get('WFControlFlowMode') == 2:
+                    self.assertEqual(active.pop(), params['GroupingIdentifier'])
+            self.assertEqual(active, [])
+            expected = [('Pending File', 1), ('Receipt', 2)]
+            if name == 'Save to Cliptext': expected.insert(0, ('Shared URL', 1))
+            self.assertEqual(captures, expected)
     def test_text_tokens_have_valid_ranges_and_attachment_types(self):
         def visit(value):
             if isinstance(value, dict):
@@ -100,6 +160,35 @@ class WorkflowSafetyTests(unittest.TestCase):
                     self.assertEqual(sum(p.get('WFCondition') == 100 for p in active), 1)
                     self.assertFalse(parameters['WFReplaceExisting'])
                 if parameters.get('WFControlFlowMode') == 2: active.pop()
+    def test_receipt_equality_uses_typed_text_subjects_and_exact_operands(self):
+        # iOS cannot select binary equality for a dynamic Dictionary Value.
+        # Preserve exact library/request comparisons using typed Text subjects.
+        expected = {'Library ID': 'libraryId', 'Pending ID': 'requestId'}
+        for workflow in self.workflows.values():
+            actions = workflow['WFWorkflowActions']
+            by_id = {a['WFWorkflowActionParameters']['UUID']: a for a in actions}
+            comparisons = [a['WFWorkflowActionParameters'] for a in actions
+                           if a['WFWorkflowActionParameters'].get('WFCondition') == 4]
+            self.assertEqual(len(comparisons), 2)
+            right_names = set()
+            for params in comparisons:
+                right = params['WFConditionalActionString']
+                self.assertEqual(right['WFSerializationType'], 'WFTextTokenString')
+                self.assertEqual(right['Value']['string'], '\ufffc')
+                target = right['Value']['attachmentsByRange']['{0, 1}']['VariableName']
+                right_names.add(target)
+                left = params['WFInput']['Variable']['Value']
+                self.assertEqual(left['Type'], 'ActionOutput')
+                text = by_id[left['OutputUUID']]
+                self.assertEqual(text['WFWorkflowActionIdentifier'], 'is.workflow.actions.gettext')
+                scalar = text['WFWorkflowActionParameters']['WFTextActionText']
+                self.assertEqual(scalar['WFSerializationType'], 'WFTextTokenString')
+                self.assertEqual(scalar['Value']['string'], '\ufffc')
+                original = scalar['Value']['attachmentsByRange']['{0, 1}']
+                source = by_id[original['OutputUUID']]
+                self.assertEqual(source['WFWorkflowActionIdentifier'], 'is.workflow.actions.getvalueforkey')
+                self.assertEqual(source['WFWorkflowActionParameters']['WFDictionaryKey'], expected[target])
+            self.assertEqual(right_names, set(expected))
     def test_no_deletion_or_app_browser_launch_actions(self):
         forbidden = ['file.delete', 'openurl', 'openapp', 'runjavascript', 'runscript', 'askllm']
         for workflow in self.workflows.values():

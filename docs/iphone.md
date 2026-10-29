@@ -38,7 +38,9 @@ Install the two credential-free templates from the private web app or `ios-short
 - **Save to Cliptext** accepts a post link from an app's Share menu.
 - **Sync Cliptext** retries links already saved by the Shortcut.
 
-Choose the same local parent folder under **On My iPhone** for both. The Shortcuts create a `Cliptext` folder inside it and share that folder's outbox. Avoid an iCloud Drive folder if links must stay local. Create a Shortcut connection on the Mac and paste its JSON settings on the first run. The submit-only credential is stored in the local `Cliptext` folder, rather than embedded in the Shortcut definition. Do not share the connection file or settings.
+Choose **On My iPhone → Downloads** as the local parent for both. The Shortcuts create a `Cliptext` folder inside it and share that folder's outbox. Avoid an iCloud Drive folder if links must stay local. Create a Shortcut connection on the Mac and paste its JSON settings on the first run. The submit-only credential is stored in the local `Cliptext` folder, rather than embedded in the Shortcut definition. Do not share the connection file or settings.
+
+If **Add Shortcut** does nothing after choosing Downloads on the iOS 27 import screen, tap **Skip Setup**. This retained the selected folder in the simulator test. Before the first run, open each Shortcut in the editor and confirm its first **Create Folder** action uses the local **On My iPhone → Downloads** parent.
 
 The Save Shortcut writes a unique link file before making a network request. It moves that exact queued file to the local `sent` folder only after the Mac returns a matching receipt. Repeating a request is safe. If the Mac is unreachable, iOS may show a network error; the saved file remains for **Sync Cliptext** or the next share. Opening the PWA cannot retry the Shortcut's files: iOS keeps the web app and Shortcuts in separate storage containers.
 

@@ -72,6 +72,12 @@ class Builder:
     def value(self, dictionary_value: dict, key: str, label: str) -> str:
         return self.add('getvalueforkey', label, WFGetDictionaryValueType='Value', WFDictionaryKey=key, WFInput=attachment(dictionary_value))
     def condition(self, value: dict, code: int, label: str, equals: str | dict | None = None):
+        if code == 4 and equals is not None:
+            # Dictionary Value is dynamically typed. iOS cannot resolve its
+            # binary operator reliably; give string equality one scalar Text
+            # output rather than Get Text's collection of extracted strings.
+            text = self.text('equality-text-' + label, value)
+            value = output(text, 'Text')
         group = uid(self.name + ':if:' + label)
         params = {'GroupingIdentifier': group, 'WFControlFlowMode': 0, 'WFCondition': code,
                   'WFInput': {'Type': 'Variable', 'Variable': attachment(value)}}
@@ -85,15 +91,25 @@ class Builder:
         kind, group, label = self.stack.pop()
         self.add(kind, 'end-' + label, GroupingIdentifier=group, WFControlFlowMode=2)
     def repeat(self, value: dict, label: str):
+        depth = 1 + sum(kind == 'repeat.each' for kind, _, _ in self.stack)
         group = uid(self.name + ':repeat:' + label)
         self.add('repeat.each', 'repeat-' + label, GroupingIdentifier=group, WFControlFlowMode=0, WFInput=attachment(value))
         self.stack.append(('repeat.each', group, label))
+        # Native Shortcuts scopes nested iteration variables by active depth.
+        # Keep that serialization here so callers cannot capture an outer item.
+        return variable('Repeat Item' if depth == 1 else 'Repeat Item ' + str(depth))
     def stop(self, label: str): self.add('exit', 'stop-' + label)
     def text(self, label: str, *parts: str | dict) -> str:
         return self.add('gettext', label, WFTextActionText=token_text(*parts))
     def save_text(self, value: dict, folder: dict, path: str | dict, label: str, overwrite: bool = False):
-        return self.add('documentpicker.save', label, WFInput=attachment(value), WFFolder=attachment(folder),
-                        WFAskWhereToSave=False, WFFileDestinationPath=token_text(path), WFSaveFileOverwrite=overwrite)
+        # Save File gives unnamed text its preferred .txt extension, even when
+        # Subpath ends in .json. Set the content's full filename first so a later
+        # Get File resolves the exact name written for the outbox or connection.
+        filename = token_text(path)
+        named = self.add('setitemname', 'name-' + label, WFName=filename,
+                         WFDontIncludeFileExtension=False, WFInput=attachment(value))
+        return self.add('documentpicker.save', label, WFInput=attachment(output(named, 'Renamed Item')), WFFolder=attachment(folder),
+                        WFAskWhereToSave=False, WFFileDestinationPath=filename, WFSaveFileOverwrite=overwrite)
     def validate(self, value: dict, pattern: str, label: str, message: str):
         matched = self.add('text.match', 'validate-' + label, text=token_text(value), WFMatchTextPattern=pattern, WFMatchTextCaseSensitive=False)
         self.condition(output(matched, 'Matches'), 101, 'invalid-' + label)
@@ -126,9 +142,11 @@ def build(name: str) -> dict:
     sent = b.add('file.createfolder', 'sent-folder', WFFolder=attachment(variable('Cliptext Folder')), WFFilePath='sent')
     b.set('Sent Folder', output(sent, 'Folder'))
     if name == 'Save to Cliptext':
-        urls = b.add('detect.link', 'shared-urls', WFInput=attachment({'Type': 'ExtensionInput'}))
-        b.repeat(output(urls, 'URLs'), 'new-shared-links')
-        b.set('Shared URL', variable('Repeat Item'))
+        # Get URLs has a native string parameter, unlike generic content actions
+        # such as Get Text. A standalone attachment is silently discarded by iOS.
+        urls = b.add('detect.link', 'shared-urls', WFInput=token_text({'Type': 'ExtensionInput'}))
+        shared_item = b.repeat(output(urls, 'URLs'), 'new-shared-links')
+        b.set('Shared URL', shared_item)
         matched = b.add('text.match', 'supported-url', text=token_text(variable('Shared URL')), WFMatchTextPattern=SUPPORTED_URL, WFMatchTextCaseSensitive=False)
         b.condition(output(matched, 'Matches'), 100, 'supported-link')
         date = b.add('date', 'current-date', WFDateActionMode='Current Date')
@@ -166,8 +184,8 @@ def build(name: str) -> dict:
     config_text = b.add('detect.text', 'serialize-connection', WFInput=attachment(variable('Connection')))
     b.save_text(output(config_text, 'Text'), variable('Cliptext Folder'), 'cliptext-connection.json', 'save-local-connection', overwrite=True)
     files = b.add('file.getfoldercontents', 'pending-files', WFFolder=attachment(variable('Pending Folder')), Recursive=False)
-    b.repeat(output(files, 'Folder Contents'), 'pending-links')
-    b.set('Pending File', variable('Repeat Item'))
+    pending_item = b.repeat(output(files, 'Folder Contents'), 'pending-links')
+    b.set('Pending File', pending_item)
     payload = b.add('detect.dictionary', 'pending-request-json', WFInput=attachment(variable('Pending File')))
     b.set('Pending Request', output(payload, 'Dictionary'))
     request_id = b.value(variable('Pending Request'), 'requestId', 'pending-request-id')
@@ -182,8 +200,8 @@ def build(name: str) -> dict:
     response_library = b.value(output(response_json, 'Dictionary'), 'libraryId', 'receipt-library')
     b.condition(output(response_library, 'Dictionary Value'), 4, 'same-library', variable('Library ID'))
     receipts = b.value(output(response_json, 'Dictionary'), 'receipts', 'receipt-items')
-    b.repeat(output(receipts, 'Dictionary Value'), 'matching-receipt')
-    b.set('Receipt', variable('Repeat Item'))
+    receipt_item = b.repeat(output(receipts, 'Dictionary Value'), 'matching-receipt')
+    b.set('Receipt', receipt_item)
     received_id = b.value(variable('Receipt'), 'requestId', 'receipt-request-id')
     b.condition(output(received_id, 'Dictionary Value'), 4, 'same-request', variable('Pending ID'))
     job = b.value(variable('Receipt'), 'jobId', 'receipt-job-id')
