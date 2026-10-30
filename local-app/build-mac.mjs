@@ -1,3 +1,4 @@
+import { auditNativeCompatibility, assertCleanPayload, release } from './package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
@@ -5,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const projectRoot = dirname(here);
 function argument(name) { const i = process.argv.indexOf(name); return i < 0 ? undefined : process.argv[i + 1]; }
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: 'inherit' });
@@ -50,7 +52,8 @@ const stagingParent = await mkdtemp(join(dirname(output), '.cliptext-app-build-'
 const staging = join(stagingParent, basename(output));
 try {
   const executable = join(scratch, 'Cliptext');
-  run('/usr/bin/xcrun', ['swiftc', '-O', '-parse-as-library', '-swift-version', '5', '-target', 'arm64-apple-macos14.0',
+  run('/usr/bin/xcrun', ['swiftc', '-O', '-parse-as-library', '-swift-version', '5', '-target', 'arm64-apple-macos15.6',
+    '-file-prefix-map', `${projectRoot}=Cliptext`,
     '-module-cache-path', join(scratch, 'module-cache'), '-framework', 'AppKit', '-framework', 'WebKit', '-framework', 'UniformTypeIdentifiers',
     join(here, 'mac', 'CliptextApp.swift'), '-o', executable]);
   const contents = join(staging, 'Contents');
@@ -69,8 +72,12 @@ try {
   const iconSource = join(source, 'client', 'icon-512.png');
   run('/usr/bin/sips', ['-s', 'format', 'icns', iconSource, '--out', join(resources, 'AppIcon.icns')]);
   const symlinks = await checkSymlinks(resources);
-  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: '0.4.0',
-    framework: 'AppKit + WKWebView', architecture: 'arm64', minimumMacOS: '26.2', signature: 'ad-hoc', notarized: false,
+  await assertCleanPayload(staging);
+  const nativeCompatibility = await auditNativeCompatibility(staging);
+  await writeFile(join(resources, 'mac-prototype.json'), JSON.stringify({ format: 'cliptext-mac-prototype', version: release.version,
+    build: release.build,
+    framework: 'AppKit + WKWebView', architecture: 'arm64', minimumMacOS: release.minimumMacOS,
+    nativeCompatibility, signature: 'ad-hoc', notarized: false,
     publicReleaseReady: false, modelsIncluded: true, resourceSymlinks: symlinks,
     config: { dataDirectoryArgument: '--data-dir', dataDirectoryEnvironment: 'CLIPTEXT_DATA_DIR', portArgument: '--port', portEnvironment: 'CLIPTEXT_PORT' },
   }, null, 2) + '\n');

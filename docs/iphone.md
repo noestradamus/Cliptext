@@ -2,10 +2,12 @@
 
 The iPhone uses an installed web app for the library and Apple Shortcuts for the Share menu. Processing and the main library stay on the user's Mac. There is no Cliptext hosting account, paid API, Apple Developer membership, or weekly signing renewal.
 
+For the private Sequoia tester package, start with the [Mac and iPhone tester guide](testing/sequoia-tester.md). Each tester uses their own Mac, library, Tailscale network, HTTPS address, and fresh pairing settings. The delivered app includes its models and runtimes; the recipient does not need to build this repository. Physical Sequoia 15.6 and iPhone acceptance remains a separate check from the native-target audit and build-host tests.
+
 ## Private HTTPS on the Mac
 
-1. Install Tailscale on the Mac and iPhone, sign in to the same private network, and leave it connected. Cliptext does not configure an internet-facing Funnel.
-2. Build/package Cliptext with the `pwa` directory included. In **Sharing setup → iPhone**, enter the Mac's full HTTPS MagicDNS address, such as `https://your-mac.your-tailnet.ts.net`, and enable the connection.
+1. Install Tailscale on the Mac and iPhone, sign in with the tester's own account on both devices, and leave it connected. Both must join that account's private network. Cliptext does not configure an internet-facing Funnel.
+2. Install the prepared app, or build/package Cliptext with the `pwa` directory included. In **Sharing setup → iPhone**, enter that Mac's full HTTPS MagicDNS address, such as `https://your-mac.your-tailnet.ts.net`, and choose **Enable iPhone connection**.
 3. Configure Tailscale Serve to forward HTTPS to the dedicated companion listener:
 
    ```sh
@@ -13,7 +15,7 @@ The iPhone uses an installed web app for the library and Apple Shortcuts for the
    tailscale serve status
    ```
 
-   The standalone Mac application includes its CLI inside `/Applications/Tailscale.app/Contents/MacOS/Tailscale`. Tailscale may first ask the network owner to enable HTTPS certificates. The machine's HTTPS hostname appears in public certificate transparency records; library data and credentials do not. Keep device names nonsensitive.
+   Tailscale's standalone Mac app includes its CLI inside `/Applications/Tailscale.app/Contents/MacOS/Tailscale`. If `tailscale` is not on the command path, use that full executable path for the commands above. Tailscale may first ask the network owner to enable HTTPS certificates. The machine's HTTPS hostname appears in public certificate transparency records; library data and credentials do not. Keep device names nonsensitive.
 
 4. Open the HTTPS address. It should show the phone library's connection screen. Do **not** proxy the desktop port 47321 or Android port 47322. Never bypass a certificate warning.
 
@@ -38,7 +40,7 @@ Install the two credential-free templates from the private web app or `ios-short
 - **Save to Cliptext** accepts a post link from an app's Share menu.
 - **Sync Cliptext** retries links already saved by the Shortcut.
 
-Choose **On My iPhone → Downloads** as the local parent for both. The Shortcuts create a `Cliptext` folder inside it and share that folder's outbox. Avoid an iCloud Drive folder if links must stay local. Create a Shortcut connection on the Mac and paste its JSON settings on the first run. The submit-only credential is stored in the local `Cliptext` folder, rather than embedded in the Shortcut definition. Do not share the connection file or settings.
+Choose **On My iPhone → Downloads** as the local parent for both. The Shortcuts create a `Cliptext` folder inside it and share that folder's outbox. Avoid an iCloud Drive folder if links must stay local. In the Mac's **Sharing setup → iPhone → Save to Cliptext Shortcut**, choose **Create Shortcut connection** and paste its JSON settings on the first run. The submit-only credential is stored in the local `Cliptext` folder, rather than embedded in the Shortcut definition. Do not share the connection file or settings.
 
 If **Add Shortcut** does nothing after choosing Downloads on the iOS 27 import screen, tap **Skip Setup**. This retained the selected folder in the simulator test. Before the first run, open each Shortcut in the editor and confirm its first **Create Folder** action uses the local **On My iPhone → Downloads** parent.
 

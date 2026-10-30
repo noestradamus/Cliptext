@@ -18,9 +18,11 @@ The interface, SQLite database, media processing, and AI models run on each user
 - Queue shared links on Android until the Mac is reachable, then retain synced transcripts for offline reading.
 - Install the iPhone PWA for offline transcripts and use a local-file-backed Save to Cliptext Shortcut.
 
-**Target:** Apple Silicon, macOS 26.2 or later; Android 8.0 or later for the companion. This is a private development snapshot, not a notarized public release. See [Android setup and build](android/README.md) for companion installation and device-verification limits.
+**Sequoia tester target:** Apple Silicon, macOS 15.6 or later; Android 8.0 or later for the companion. This is a private tester build with an ad-hoc signature. Native deployment-target checks and tests on the build Mac do not establish acceptance on a physical Mac running 15.6. See the [Mac and iPhone tester guide](docs/testing/sequoia-tester.md) for installation and the remaining device checks.
 
 For iPhone installation, private HTTPS, offline behavior, and the Share-menu Shortcuts, see [iPhone setup](docs/iphone.md). The PWA syncs while open; Shortcuts retain their own local outbox when the Mac cannot be reached.
+
+The tester disk image is prepared separately from this source repository. It includes the app, models, runtimes, and a short setup guide. The recipient starts with their own empty library and creates their own phone connections. They do not need developer tools, a Sites account, or access to another user's Cliptext installation.
 
 ## What is in this repository
 
@@ -60,6 +62,9 @@ The app opens an authenticated local session automatically. Opening the bare loo
 To assemble the native application after building the runtime and preparing models:
 
 ```sh
+"$PWD/.engine-build/CliptextEngine/python/bin/python3.11" -I -B \
+  local-app/clean-runtime.py --bundle "$PWD/.engine-build/CliptextEngine" \
+  --compile-bytecode
 npm run package:local -- \
   --engine-bundle "$PWD/.engine-build/CliptextEngine" \
   --models "$PWD/.engine-build/models" \
@@ -85,7 +90,7 @@ Unit tests use synthetic identifiers and data. The optional live verification ru
 
 ## Before a public release
 
-- Test installation on a second clean Mac.
+- Complete Sequoia 15.6 installation and inference checks on a second Mac, plus the real iPhone TikTok Share-menu and offline checks.
 - Complete native signing/notarization and binary-distribution license obligations.
 - Choose the license for Cliptext itself and finish release/contributor documentation.
 - Verify Android installation, quiet sharing, sleep/reconnect, and offline reading on a physical phone.

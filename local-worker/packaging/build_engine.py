@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
@@ -21,6 +22,104 @@ HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent
 ENGINE_FILES = ('worker.py', 'standalone.py', 'ocr.py', 'image_posts.py', 'insights.py',
                 'checkpoints.py', 'local_processes.py', 'vision-ocr.swift')
+TARGET_MACOS = '15.0'
+TARGET_PYTHON = 'cp311'
+
+
+def target_platform(value: str) -> str:
+    if not re.fullmatch(r'\d+\.\d+', value) or int(value.split('.')[0]) < 11:
+        raise ValueError('Choose an arm64 macOS deployment target such as 15.0.')
+    major, minor = (int(part) for part in value.split('.'))
+    return f'macosx_{major}_{minor}_arm64'
+
+
+def normalized_name(value: str) -> str:
+    return re.sub(r'[-_.]+', '-', value).lower()
+
+
+def locked_packages(lock: Path, platform: str) -> dict[str, tuple[str, set[str]]]:
+    """A reviewed lock selects a target artifact, not just a package version."""
+    text = lock.read_text()
+    if f'# target-platform: {platform}' not in text.splitlines() or f'# target-python: {TARGET_PYTHON}' not in text.splitlines():
+        raise ValueError('The reviewed wheel lock does not match the requested macOS/Python target.')
+    packages = {}
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith('#'):
+            continue
+        row = re.fullmatch(r'([A-Za-z0-9_.-]+)==([^\s]+)((?: --hash=sha256:[0-9a-f]{64})+)', line.strip())
+        if not row:
+            raise ValueError('The wheel lock must contain only exact versions and SHA-256 hashes.')
+        key = normalized_name(row[1])
+        if key in packages:
+            raise ValueError(f'Duplicate locked distribution: {key}')
+        packages[key] = (row[2], set(re.findall(r'sha256:([0-9a-f]{64})', row[3])))
+    if not packages:
+        raise ValueError('The reviewed wheel lock is empty.')
+    return packages
+
+
+def wheel_target_matches(filename: str, platform: str) -> bool:
+    """Check wheel tags without trusting the current build host's newer OS."""
+    try:
+        _, _, python_tags, abi_tags, platforms = filename[:-4].rsplit('-', 4)
+        target = tuple(map(int, re.fullmatch(r'macosx_(\d+)_(\d+)_arm64', platform).groups()))
+    except (ValueError, AttributeError):
+        return False
+    abi = set(abi_tags.split('.'))
+    python_ok = any(tag in {'py3', TARGET_PYTHON} or
+                    bool('abi3' in abi and re.fullmatch(r'cp3\d+', tag) and int(tag[2:]) <= 311)
+                    for tag in python_tags.split('.'))
+    if not python_ok or not abi.intersection({'none', 'abi3', TARGET_PYTHON}):
+        return False
+    for tag in platforms.split('.'):
+        if tag == 'any':
+            return True
+        match = re.fullmatch(r'macosx_(\d+)_(\d+)_(arm64|universal2)', tag)
+        if match and tuple(map(int, match.groups()[:2])) <= target:
+            return True
+    return False
+
+
+def validate_wheelhouse(wheelhouse: Path, lock: Path, platform: str) -> list[dict]:
+    from email.parser import BytesParser
+    from zipfile import ZipFile
+    expected = locked_packages(lock, platform)
+    found = {}
+    for wheel in sorted(wheelhouse.glob('*.whl')):
+        if not wheel_target_matches(wheel.name, platform):
+            raise ValueError(f'Wheel is incompatible with {platform}/{TARGET_PYTHON}: {wheel.name}')
+        with ZipFile(wheel) as archive:
+            paths = [name for name in archive.namelist() if name.endswith('.dist-info/METADATA') and name.count('/') == 1]
+            if len(paths) != 1:
+                raise ValueError(f'Invalid wheel metadata: {wheel.name}')
+            metadata = BytesParser().parsebytes(archive.read(paths[0]))
+        key = normalized_name(metadata.get('Name', ''))
+        sha = digest(wheel)
+        if key not in expected or metadata.get('Version') != expected[key][0] or sha not in expected[key][1]:
+            raise ValueError(f'Wheel identity, version, or hash does not match the reviewed target lock: {wheel.name}')
+        if key in found:
+            raise ValueError(f'Duplicate target wheel: {key}')
+        found[key] = {'file': wheel.name, 'sha256': sha}
+    if found.keys() != expected.keys():
+        raise ValueError('The target wheelhouse does not contain exactly the reviewed distributions.')
+    return [found[key] for key in sorted(found)]
+
+
+def target_download_command(interpreter: Path, requirements: Path, wheelhouse: Path, platform: str, hashes=True) -> list[str]:
+    return [str(interpreter), '-I', '-m', 'pip', 'download', '--disable-pip-version-check', '--no-cache-dir',
+            '--platform', platform, '--python-version', '3.11', '--implementation', 'cp', '--abi', TARGET_PYTHON,
+            *(['--require-hashes'] if hashes else []), '--only-binary=:all:', '--no-deps', '-r', str(requirements), '--dest', str(wheelhouse)]
+
+
+def target_install_command(interpreter: Path, lock: Path, wheelhouse: Path) -> list[str]:
+    # A cloned prototype can already have the same MLX version from a newer-OS
+    # wheel. Force replacement; 'requirement already satisfied' is not evidence.
+    return [str(interpreter), '-I', '-m', 'pip', 'install', '--disable-pip-version-check', '--no-cache-dir',
+            '--no-index', '--find-links', str(wheelhouse), '--require-hashes', '--force-reinstall', '--no-compile', '--no-deps', '-r', str(lock)]
+
+
+def target_wheelhouse(cache: Path, lock: Path, platform: str) -> Path:
+    return cache / 'wheels' / f'{platform}-{TARGET_PYTHON}' / digest(lock)[:16]
 
 
 def digest(path: Path) -> str:
@@ -51,7 +150,7 @@ def run(command: list[str], **kwargs):
     subprocess.run(command, check=True, **kwargs)
 
 
-def wheel_lock(wheelhouse: Path, output: Path):
+def wheel_lock(wheelhouse: Path, output: Path, platform: str = 'macosx_15_0_arm64'):
     # The download directory is isolated; each locked distribution has one wheel.
     from zipfile import ZipFile
     from email.parser import BytesParser
@@ -64,11 +163,11 @@ def wheel_lock(wheelhouse: Path, output: Path):
                 raise ValueError(f'Invalid wheel metadata: {wheel.name}')
             info = BytesParser().parsebytes(archive.read(paths[0]))
         name = info['Name']
-        if name.lower().replace('_', '-') in names:
+        if normalized_name(name) in names:
             raise ValueError(f'Duplicate wheel: {name}')
-        names.add(name.lower().replace('_', '-'))
+        names.add(normalized_name(name))
         packages.append(f"{name}=={info['Version']} --hash=sha256:{digest(wheel)}")
-    output.write_text('# macOS arm64 CPython 3.11 wheel hashes; no source builds.\n' + '\n'.join(sorted(packages, key=str.casefold)) + '\n')
+    output.write_text(f'# macOS arm64 CPython 3.11 wheel hashes; no source builds.\n# target-platform: {platform}\n# target-python: {TARGET_PYTHON}\n' + '\n'.join(sorted(packages, key=str.casefold)) + '\n')
 
 
 def write_launcher(output: Path):
@@ -142,7 +241,17 @@ def main():
     parser.add_argument('--cache', type=Path, required=True)
     parser.add_argument('--bootstrap-lock', action='store_true', help='Download pinned versions and create the reviewed wheel hash lock.')
     parser.add_argument('--python-only', action='store_true', help='Prepare embedded Python and dependencies before engine sources are ready.')
+    parser.add_argument('--target-macos', default=TARGET_MACOS, help='Reviewed wheel deployment target (default: 15.0), independent of the build host.')
     args = parser.parse_args()
+    try:
+        platform = target_platform(args.target_macos)
+    except ValueError as error:
+        parser.error(str(error))
+    lock = HERE / 'requirements-macos-arm64.lock'
+    if not args.bootstrap_lock:
+        if not lock.is_file():
+            raise ValueError('Generate/review the standalone wheel lock before building.')
+        locked_packages(lock, platform)
     output, cache = args.output.resolve(), args.cache.resolve()
     output.mkdir(parents=True, exist_ok=True)
     cache.mkdir(parents=True, exist_ok=True)
@@ -164,22 +273,26 @@ def main():
     if version != python_source['version']:
         raise ValueError('Embedded Python version does not match the pinned source.')
     stamp.write_text(json.dumps(python_source, indent=2) + '\n')
-    wheelhouse = cache / 'wheels'
-    wheelhouse.mkdir(exist_ok=True)
-    lock = HERE / 'requirements-macos-arm64.lock'
+    # Never reuse a host-selected wheel directory. Both the declared platform and
+    # reviewed lock digest are part of the namespace; pip's ambient cache is off.
+    cache_target = cache / 'wheels' / f'{platform}-{TARGET_PYTHON}'
+    wheelhouse = cache_target / ('bootstrap-' + digest(HERE / 'requirements-versions.lock')[:16]) if args.bootstrap_lock else target_wheelhouse(cache, lock, platform)
+    wheelhouse.mkdir(parents=True, exist_ok=True)
     if args.bootstrap_lock:
         if lock.exists():
             raise ValueError('A wheel hash lock already exists; review/remove it explicitly before bootstrapping again.')
         versions = HERE / 'requirements-versions.lock'
-        run([str(interpreter), '-I', '-m', 'pip', 'download', '--disable-pip-version-check', '--only-binary=:all:', '--no-deps', '-r', str(versions), '--dest', str(wheelhouse)])
-        wheel_lock(wheelhouse, lock)
+        run(target_download_command(interpreter, versions, wheelhouse, platform, hashes=False))
+        wheel_lock(wheelhouse, lock, platform)
     if not lock.is_file():
         raise ValueError('Generate/review the standalone wheel lock before building.')
-    run([str(interpreter), '-I', '-m', 'pip', 'download', '--disable-pip-version-check', '--require-hashes', '--only-binary=:all:', '--no-deps', '-r', str(lock), '--dest', str(wheelhouse)])
-    run([str(interpreter), '-I', '-m', 'pip', 'install', '--disable-pip-version-check', '--no-index', '--find-links', str(wheelhouse), '--require-hashes', '--no-deps', '-r', str(lock)])
+    run(target_download_command(interpreter, lock, wheelhouse, platform))
+    artifacts = validate_wheelhouse(wheelhouse, lock, platform)
+    run(target_install_command(interpreter, lock, wheelhouse))
     run([str(interpreter), '-I', '-m', 'pip', 'check'])
     resources = output / 'resources'
     resources.mkdir(exist_ok=True)
+    (resources / 'runtime-target.json').write_text(json.dumps({'platform': platform, 'python': TARGET_PYTHON, 'lockSha256': digest(lock), 'wheels': artifacts}, indent=2) + '\n')
     shutil.copy2(HERE / 'runtime-sources.json', resources)
     shutil.copy2(lock, resources)
     shutil.copy2(HERE / 'models.lock.json', resources)

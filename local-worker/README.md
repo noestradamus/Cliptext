@@ -2,7 +2,7 @@
 
 Cliptext processes each user's media on their own Mac. The standalone app uses `local_service.py`, supervised by the local Node server, with a SQLite library and a private loopback API. It does not need Sites hosting, a transcription API key, or a hosted worker.
 
-The current packaged runtime targets **Apple Silicon and macOS 26.2 or later**. It is a development prototype; the native app is ad-hoc signed and is not notarized. See the [app instructions](../local-app/README.md) for building and running the complete interface.
+The Sequoia tester runtime targets **Apple Silicon and macOS 15.6 or later**. It uses the macOS 15 builds of the pinned MLX dependencies. The native app is ad-hoc signed and is not notarized. Its native-library audit and tests on the build Mac do not establish physical Sequoia 15.6 acceptance; that is part of the [tester checklist](../docs/testing/sequoia-tester.md). See the [app instructions](../local-app/README.md) for building and running the complete interface.
 
 ## Processing
 

@@ -15,7 +15,7 @@ import { startPhoneSync } from './phone';
 import { startWebCompanion } from './web-companion';
 export { EngineSupervisor };
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 const MIMES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json' };
 export type AppOptions = { dataDir: string; clientDir: string; webClientDir?: string; migrationsDir: string; engineBundle: string; modelsDir: string; engineScript?: string; port?: number; phonePort?: number; webPort?: number; autoStartEngine?: boolean };
 

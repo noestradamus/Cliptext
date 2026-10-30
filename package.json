@@ -1,6 +1,6 @@
 {
   "name": "cliptext",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
@@ -14,6 +14,7 @@
     "local:start": "node local-app/dist/server/main.mjs",
     "package:local": "node local-app/package.mjs",
     "package:mac": "node local-app/build-mac.mjs",
+    "package:dmg": "node local-app/build-dmg.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && npm run typecheck && npm run test:node && npm run test:python",
     "test:node": "node --experimental-transform-types --test tests/*.test.mjs local-app/tests/*.test.mjs",
