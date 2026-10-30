@@ -30,11 +30,28 @@ The observed test logs record:
 | `packaging-tests.log` | 47 tests passed. |
 | `cleaner-tests-py311.log` | 13 tests passed. |
 
-Native app assembly completed with its models included. The app is ad-hoc signed, is not notarized, and retains the prototype/public-release-not-ready markers.
+Native app assembly completed with its models included. The completed app audit reports **247 native files**, with a highest declared minimum of **15.6**. The app is ad-hoc signed, is not notarized, and retains the prototype/public-release-not-ready markers.
 
 The source-material manifest was checked read-only against the complete file set, byte sizes, and SHA-256 digests. It includes all eleven requested tool source archives, their recipes/build inputs, model licenses, and JavaScript/font notices with no collection issues. This collection and integrity check is not an exact binary reproduction build or a certification of complete redistribution compliance.
 
-The final disk image's creation, hash, and staged-payload checks belong to the separate installer receipt. App assembly success alone is not disk-image verification.
+## Final installer
+
+The completed image is `Cliptext-0.4.1-Sequoia-AppleSilicon.dmg`, **5,556,920,816 bytes**, with SHA-256:
+
+```text
+9cc524cd47d616d830f5b3f9212dc0590d5f8a2af3e21cb6c3a007d8ea69f2c7
+```
+
+`dmg-mounted-report.json` records **seven passing checks** against the mounted image:
+
+- Installer layout and signed bundle metadata match the verified input.
+- Recipient-readable permissions are verified for **41,741 files**, along with six internal app symlinks.
+- The source-material check covers **329 files** and eleven source archives with matching hashes.
+- Generic phone Shortcut hashes match the verified app.
+- Bundled Node reports **22.23.4**.
+- Bundled Python reports **3.11.18**, and actual MLX evaluation returns **[2, 4, 6]**.
+
+The first direct execution of the mounted Node binary timed out after 60 seconds. A scoped macOS log recorded an ad-hoc/unknown-certificate-chain assessment. An unchanged retry completed in 0.48 seconds. This transient first-execution result is retained as an observation; the log does not establish its full cause. The image was detached normally after verification.
 
 ## Remaining device acceptance
 
