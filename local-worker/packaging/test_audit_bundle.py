@@ -1,5 +1,8 @@
 """Focused static-audit tests with synthetic Mach-O headers/load commands."""
 from pathlib import Path
+from contextlib import redirect_stderr, redirect_stdout
+import io
+import json
 import struct
 import tempfile
 import unittest
@@ -124,6 +127,65 @@ class AuditTests(unittest.TestCase):
             with patch("audit_bundle.run_otool", side_effect=lambda p: outputs[p]):
                 report = audit_bundle.Auditor(root).report()
             self.assertTrue(report["passed"], report["issues"])
+
+    def test_ceiling_rejects_unattached_native_library(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            exe = binary(root / 'engine', executable=True)
+            unused = binary(root / 'lib/unused.dylib')
+            outputs = {exe: loads(version='15.0'), unused: loads(version='26.2')}
+            with patch('audit_bundle.run_otool', side_effect=lambda p: outputs[p]):
+                report = audit_bundle.Auditor(root, max_macos='15.6').report()
+            self.assertFalse(report['passed'])
+            self.assertFalse(report['deploymentTargetsWithinLimit'])
+            self.assertEqual(report['maximumAllowedMacOS'], '15.6')
+            self.assertEqual(report['issues'], [{'kind': 'deployment_target_exceeds_limit', 'path': 'lib/unused.dylib', 'architecture': 'arm64', 'minimumMacOS': '26.2', 'maximumAllowedMacOS': '15.6'}])
+
+    def test_ceiling_checks_every_universal_slice(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); binary(root / 'engine', executable=True)
+            output = 'fixture (architecture arm64):\n' + loads(version='15.0') + '\nfixture (architecture x86_64):\n' + loads(version='26.0')
+            with patch('audit_bundle.run_otool', return_value=output):
+                report = audit_bundle.Auditor(root, max_macos='15.6').report()
+            self.assertFalse(report['passed'])
+            self.assertEqual(report['issues'][0]['architecture'], 'x86_64')
+
+    def test_ceiling_normalizes_trailing_zero_versions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); binary(root / 'engine', executable=True)
+            with patch('audit_bundle.run_otool', return_value=loads(version='15.6.0')):
+                report = audit_bundle.Auditor(root, max_macos='15.6').report()
+            self.assertTrue(report['passed'], report['issues'])
+            self.assertTrue(report['deploymentTargetsWithinLimit'])
+            self.assertEqual(audit_bundle.version_key('15.6.0'), audit_bundle.version_key('15.6'))
+
+    def test_requested_ceiling_cannot_certify_missing_native_target(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); binary(root / 'engine', executable=True)
+            with patch('audit_bundle.run_otool', return_value='fixture:\n'):
+                report = audit_bundle.Auditor(root, max_macos='15.6').report()
+            self.assertFalse(report['passed'])
+            self.assertEqual(report['issues'][0]['kind'], 'deployment_target_unknown')
+
+    def test_cli_ceiling_is_recorded_and_returns_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); binary(root / 'engine', executable=True)
+            output = root / 'audit.json'
+            with patch('audit_bundle.run_otool', return_value=loads(version='26.2')), redirect_stdout(io.StringIO()):
+                status = audit_bundle.main(['--bundle', str(root), '--output', str(output), '--max-macos', '15.6'])
+            self.assertEqual(status, 1)
+            report = json.loads(output.read_text())
+            self.assertEqual(report['maximumAllowedMacOS'], '15.6')
+            self.assertFalse(report['deploymentTargetsWithinLimit'])
+
+    def test_invalid_cli_ceiling_fails_before_native_inspection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for value in ['15.x', '-1', '15.6/../../', '15.6.0.0']:
+                with self.subTest(value=value), patch('audit_bundle.run_otool') as inspect, redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as raised:
+                        audit_bundle.main(['--bundle', temporary, '--output', str(Path(temporary) / 'audit.json'), '--max-macos=' + value])
+                    self.assertEqual(raised.exception.code, 2)
+                    inspect.assert_not_called()
 
 
 if __name__ == "__main__":

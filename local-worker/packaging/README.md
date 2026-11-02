@@ -1,6 +1,6 @@
 # Standalone engine packaging
 
-These are build-time tools for an Apple Silicon macOS runtime. The source snapshot contains scripts and lock files, **not compiled tools, model weights, or a ready-to-install app**. The current runtime requires macOS 26.2 or later.
+These are build-time tools for an Apple Silicon macOS runtime. The source snapshot contains scripts and lock files, **not compiled tools, model weights, or a ready-to-install app**. The Sequoia tester runtime targets macOS 15.6 or later.
 
 The build machine needs Python, Xcode Command Line Tools, and an arm64 FFmpeg/FFprobe installation. Building the complete app also needs the Node/npm toolchain described in the [app instructions](../../local-app/README.md). The resulting package includes its own Python, Node, media tools, and compiled Vision helper; users do not need developer tools or Homebrew to run it.
 
@@ -22,7 +22,19 @@ python3 local-worker/packaging/build_engine.py \
 
 `bundle_tools.py` downloads a SHA-256-pinned Node 22.23.4 archive, copies the selected media-tool dependency closure, relocates its non-system libraries, and compiles `vision-ocr.swift`. `build_engine.py` downloads a pinned standalone CPython 3.11.18 runtime and installs the exact binary wheels listed in the hash lock. These steps need network access unless the required downloads are already cached.
 
+The Sequoia lock selects the macOS 15.0 arm64 builds of MLX and MLX Metal. Package versions remain pinned. Wheel selection and its cache are tied to the target platform, so building on a newer macOS release must not substitute a wheel that requires that newer OS. The finished app declares 15.6 as its tester minimum and audits its native binaries against that ceiling.
+
 The runtime contains `bin/`, `lib/`, `python/`, `engine/`, `resources/`, `licenses/`, and the `cliptext-engine` launcher. Keep the entire directory together when relocating it.
+
+Before app packaging, finalize a disposable runtime copy using its embedded Python:
+
+```sh
+"$PWD/.engine-build/CliptextEngine/python/bin/python3.11" -I -B \
+  local-app/clean-runtime.py --bundle "$PWD/.engine-build/CliptextEngine" \
+  --compile-bytecode
+```
+
+This removes only known unused Windows launchers and build-path bytecode, sanitizes provenance records, then generates verified Python 3.11 caches with logical filenames. It preserves the source, runtime dependencies, licenses, and public checksums. It refuses installed app bundles and live library directories. The packaging gates independently reject private state and incompatible native binaries.
 
 ## Prepare models explicitly
 
@@ -59,10 +71,11 @@ Run the `doctor` example in the [engine README](../README.md), then process oper
 ```sh
 python3 local-worker/packaging/audit_bundle.py \
   --bundle .engine-build/CliptextEngine \
+  --max-macos 15.6 \
   --output .engine-build/runtime-audit.json
 ```
 
-An audit is a structural check; actual inference and a clean-device installation require separate verification. The smoke utilities can prepare a relocated, restricted test runtime from local fixtures; see their `--help` and provide your own non-sensitive test inputs.
+The maximum-version check must reject a bundled native slice that requires macOS later than 15.6. Changing only the app's declared minimum cannot make such a binary compatible. An audit is a structural check; actual inference and a clean-device installation require separate verification. The smoke utilities can prepare a relocated, restricted test runtime from local fixtures; see their `--help` and provide your own non-sensitive test inputs. Record host tests and physical Sequoia 15.6 acceptance separately, using the [tester checklist](../../docs/testing/sequoia-tester.md).
 
 The full app packager consumes the engine and the separate model directory after the frontend/server build. Follow the [app instructions](../../local-app/README.md) for that build and the native wrapper.
 

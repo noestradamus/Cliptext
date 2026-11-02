@@ -43,7 +43,10 @@ def inside(path: Path, root: Path) -> bool:
 
 
 def version_key(value: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in value.split("."))
+    parts = [int(part) for part in value.split(".")]
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
 
 
 def run_otool(path: Path) -> str:
@@ -171,8 +174,11 @@ def slice_for(record: dict, architecture: str) -> dict | None:
 
 
 class Auditor:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, max_macos: str | None = None):
+        if max_macos is not None and not re.fullmatch(r"\d+(?:\.\d+){0,2}", max_macos):
+            raise ValueError("The maximum macOS version must be a version such as 15.6.")
         self.root = root.resolve(strict=True)
+        self.max_macos = max_macos
         self.catalog: dict[Path, dict] = {}
         self.issues: list[dict] = []
         self._issue_keys: set[str] = set()
@@ -338,14 +344,32 @@ class Auditor:
             if item["minimumMacOS"] and re.fullmatch(r"\d+(?:\.\d+)*", item["minimumMacOS"])
         ]
         highest = max((target["version"] for target in targets), key=version_key, default=None)
+        ceiling_passed = None
+        if self.max_macos is not None:
+            ceiling_passed = True
+            # Inspect every slice, including unloaded/unattached libraries. A
+            # successful dependency closure alone says nothing about the OS floor.
+            for path, record in self.catalog.items():
+                for item in record["slices"]:
+                    minimum = item["minimumMacOS"]
+                    if not minimum or not re.fullmatch(r"\d+(?:\.\d+)*", minimum):
+                        ceiling_passed = False
+                        self.issue("deployment_target_unknown", path, architecture=item["architecture"], maximumAllowedMacOS=self.max_macos)
+                    elif version_key(minimum) > version_key(self.max_macos):
+                        ceiling_passed = False
+                        self.issue("deployment_target_exceeds_limit", path, architecture=item["architecture"], minimumMacOS=minimum, maximumAllowedMacOS=self.max_macos)
         if not self.catalog:
             self.issue("no_macho_files", self.root)
+            if self.max_macos is not None:
+                ceiling_passed = False
         return {
             "format": "cliptext-engine-portability-audit", "version": 1,
             "bundle": str(self.root), "passed": not self.issues,
             "machoCount": len(self.catalog), "symlinkCount": len(self.symlinks),
             "highestMinimumMacOS": highest,
-            "highestMinimumMacOSFiles": [target for target in targets if target["version"] == highest],
+            "highestMinimumMacOSFiles": [target for target in targets if highest is not None and version_key(target["version"]) == version_key(highest)],
+            "maximumAllowedMacOS": self.max_macos,
+            "deploymentTargetsWithinLimit": ceiling_passed,
             "issues": self.issues, "symlinks": self.symlinks,
             "machos": sorted(self.catalog.values(), key=lambda value: value["path"]),
             "limits": [
@@ -361,13 +385,16 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-macos", help="Fail if any native slice requires a newer macOS version (for example 15.6).")
     args = parser.parse_args(argv)
     if not args.bundle.is_dir():
         parser.error("--bundle must be an existing directory")
-    result = Auditor(args.bundle).report()
+    if args.max_macos is not None and not re.fullmatch(r"\d+(?:\.\d+){0,2}", args.max_macos):
+        parser.error("--max-macos must be a version such as 15.6")
+    result = Auditor(args.bundle, max_macos=args.max_macos).report()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({key: result[key] for key in ("passed", "machoCount", "symlinkCount", "highestMinimumMacOS")}))
+    print(json.dumps({key: result[key] for key in ("passed", "machoCount", "symlinkCount", "highestMinimumMacOS", "maximumAllowedMacOS", "deploymentTargetsWithinLimit")}))
     return 0 if result["passed"] else 1
 
 

@@ -6,6 +6,24 @@ The current interface runs against a local SQLite library and packaged transcrip
 
 `local-app/build.mjs` builds the React client and Node server, then copies the SQL migrations. `package.mjs` combines them with an independently prepared engine and model directory. `build-mac.mjs` wraps the package in an AppKit/WKWebView application with embedded runtimes and weights. Generated packages stay outside Git.
 
+The Sequoia tester package targets Apple Silicon and macOS 15.6 or later. Its runtime must pass the native-library deployment-target audit before packaging. An audit and successful execution on a newer build Mac are separate from acceptance on a physical Sequoia 15.6 Mac.
+
+For a recipient, the installer flow is to open the disk image, drag the app to Applications, and launch the installed copy. The app creates its own library on that Mac; installation does not import the builder's data or phone connections. See the [tester guide](../docs/testing/sequoia-tester.md) and [compact setup sheet](../docs/testing/QuickStart.md).
+
+After assembling and verifying a fresh app, prepare the private tester disk image with explicit inputs:
+
+```sh
+node local-app/build-dmg.mjs \
+  --app "$PWD/.engine-build/Cliptext.app" \
+  --output "$PWD/.engine-build/Cliptext-0.4.1-macos-arm64.dmg" \
+  --quick-start "$PWD/docs/testing/QuickStart.md" \
+  --notices /path/to/ThirdPartyNotices.txt \
+  --source-materials /path/to/verified/materials \
+  --extra "$PWD/docs/testing/sequoia-tester.md"
+```
+
+Use the reviewed notices and source materials for the exact binaries and models being distributed. `collect-tester-materials.py` collects pinned source archives, recipes, and notices into an inventory that `--source-materials` verifies before copying. Generic `--extra` accepts static documents and signed Shortcuts, rather than arbitrary archives. The image contains `Cliptext.app`, an Applications shortcut, the setup sheet, notices, source materials, and explicitly selected extras. Do not include an Application Support directory, library backup, personal media, logs, or connection settings. Use a fresh output path; replacing an image requires its unchanged ownership/hash receipt and an explicit `--replace`.
+
 For development, Node 22.23.4 is pinned. Runtime data defaults to `~/Library/Application Support/Cliptext`:
 
 | Path | Contents |
@@ -47,4 +65,4 @@ Run `npm run build`, `npm run typecheck`, and `npm run test:node`. These tests e
 
 ## Remaining scope
 
-The current target is Apple Silicon/macOS26.2+. Prototype signatures are ad hoc; public signing/notarization, complete binary redistribution notices/source obligations, second-Mac acceptance, and physical Android acceptance remain release work. Library backups currently omit custom theme/appearance settings and device connections.
+The Sequoia tester target is Apple Silicon/macOS15.6+. Prototype signatures are ad hoc; public signing/notarization, complete binary redistribution notices/source obligations, second-Mac acceptance, and physical phone acceptance remain release work. In particular, simulator tests do not establish real TikTok sharing or offline behavior on an iPhone. Library backups currently omit custom theme/appearance settings and device connections.
