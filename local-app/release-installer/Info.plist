@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>Cliptext Installer</string>
+    <key>CFBundleDisplayName</key><string>Cliptext Installer</string>
+    <key>CFBundleIdentifier</key><string>life.cliptext.installer</string>
+    <key>CFBundleExecutable</key><string>CliptextInstaller</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleShortVersionString</key><string>1.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>LSMinimumSystemVersion</key><string>15.6</string>
+    <key>LSFileQuarantineEnabled</key><true/>
+    <key>NSDownloadsFolderUsageDescription</key><string>Cliptext Installer saves the verified disk image in Downloads.</string>
+    <key>NSHighResolutionCapable</key><true/>
+</dict>
+</plist>

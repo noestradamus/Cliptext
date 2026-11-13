@@ -94,6 +94,6 @@ The direct Python pins are MLX 0.32.4, MLX Whisper 0.4.3, MLX LM 0.32.2, yt-dlp 
 
 ## Distribution status
 
-The build uses ad-hoc signatures and produces prototype manifests with public redistribution disabled. It does not notarize the app. The selected FFmpeg build and its transitive libraries determine the applicable terms; the current prototype uses a GPL/version-3-enabled build. Corresponding-source and other distribution requirements remain pending before a public binary release. Collected license files and package receipts are not a substitute for complete corresponding source.
+The build uses ad-hoc signatures and produces prototype manifests. The selected FFmpeg build enables GPL and version-3 features. Preserve the matching upstream sources, build recipes, notices and license texts for the actual runtime and media libraries in each release.
 
-See [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md). No license for Cliptext's own code has been chosen in this private source snapshot.
+Cliptext's own code has no selected license. The Mac beta's accompanying materials are listed in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).

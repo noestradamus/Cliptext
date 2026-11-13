@@ -1,0 +1,62 @@
+{
+  "filename": "Cliptext-0.4.1-Sequoia-AppleSilicon.dmg",
+  "sha256": "9cc524cd47d616d830f5b3f9212dc0590d5f8a2af3e21cb6c3a007d8ea69f2c7",
+  "size": 5556920816,
+  "parts": [
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part01",
+      "size": 536870912,
+      "sha256": "24d9fde3e946ed8c8974ff163db859005153e13bc9ab2d7c20e1fa27a7d7b570"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part02",
+      "size": 536870912,
+      "sha256": "4fab04c3db7a62f199e195c990376519cae8f64347d02702c2c4f4f75668bbca"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part03",
+      "size": 536870912,
+      "sha256": "60f730d6b9e84f8b5102768c8d467abb8476750cf2fc439a5863276e1b7a5e15"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part04",
+      "size": 536870912,
+      "sha256": "e7d854eb9eab09c280b59ebf1b1a299941b9d8e5fe009e3db6c84ac46f54ef2d"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part05",
+      "size": 536870912,
+      "sha256": "0e22ba8f37490e94d5e7a00dcc8dad182064e107302651b839b9f73e3c2d120a"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part06",
+      "size": 536870912,
+      "sha256": "ff2ab7e7da358aa37a296c96f1659c90e1fe268917aa30c5a6b18d143b154c3f"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part07",
+      "size": 536870912,
+      "sha256": "39aca3404f8c8a573cf90f764ebd58a827620c5ae3d38453f3c0bdb1be95d75d"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part08",
+      "size": 536870912,
+      "sha256": "f942448124e4a3e0a054a7e126304a7ccb54d3b5a979fa12a82822aeb70b174d"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part09",
+      "size": 536870912,
+      "sha256": "f30ba787d5e2eb9b9123e82abccd70d98e1932420c7ad256727c727cc618dd63"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part10",
+      "size": 536870912,
+      "sha256": "0ad7bde23f80b9539b563408f3268cad10728e9a1aaa6b8b6e628e2f292f2da2"
+    },
+    {
+      "url": "https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-0.4.1-Sequoia-AppleSilicon.dmg.part11",
+      "size": 188211696,
+      "sha256": "8ed942131902c14b7bf4eec7077bcbfef79461cade40aa72249b00103d8bd0bd"
+    }
+  ]
+}

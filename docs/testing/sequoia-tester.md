@@ -1,13 +1,13 @@
 # Sequoia Mac and iPhone tester guide
 
-This private build targets an Apple Silicon Mac running **macOS Sequoia 15.6 or later**. Its models and runtimes are included. There is no developer-tool installation or paid inference API setup for the recipient.
+This beta targets an Apple Silicon Mac running **macOS Sequoia 15.6 or later**. Its models and runtimes are included.
 
 Native deployment-target checks and tests on the build Mac are preparation evidence. A successful install, real inference, and phone flow on the tester's M2/Sequoia 15.6 Mac and physical iPhone are still required for device acceptance. Record those outcomes separately from the earlier iPhone simulator tests.
 
 ## Install the app
 
-1. Open the supplied disk image and drag **Cliptext** to **Applications**. Eject the disk image and launch the installed copy.
-2. This private build is ad-hoc signed and is not notarized. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for Cliptext and approve the macOS prompt yourself. Follow [Apple's instructions](https://support.apple.com/en-us/102445). If macOS reports a damaged app or no per-app approval is available, stop and report the exact message. Do not remove quarantine attributes or disable Gatekeeper with Terminal commands.
+1. Download the installer from the [Mac release](https://github.com/noestradamus/Cliptext/releases/tag/v0.4.1-beta.1). Unzip and open **Cliptext Installer**, then click **Download Cliptext**. When the verified disk image opens, drag **Cliptext** to **Applications**, eject the image and launch the installed copy.
+2. The installer and Cliptext are ad-hoc signed and have not been notarized. macOS may ask for per-app approval the first time you open each one. If macOS reports a damaged app, stop and report the exact message. [Apple's first-launch instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac)
 3. Wait for **Running**. On a fresh Mac account, the library should be empty. Paste a new public TikTok link and wait for the transcript, short title, and summary.
 
 The app creates `~/Library/Application Support/Cliptext` on that Mac. It contains that user's library, private media, checkpoints, and local connections. The installer does not carry another user's library, logins, Tailscale identity, or pairing settings. If an existing Cliptext library is already present, the app opens it; make a library backup before testing an update.

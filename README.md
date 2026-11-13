@@ -4,7 +4,17 @@ A local-first Mac app that turns video and image-post links into a searchable te
 
 The interface, SQLite database, media processing, and AI models run on each user's own Mac. No Sites hosting, ChatGPT account, or paid inference API is required. New post retrieval needs internet; saved transcripts remain available offline.
 
-## Current prototype
+## Install on Mac
+
+**[Download Cliptext Installer for Mac](https://github.com/noestradamus/Cliptext/releases/download/v0.4.1-beta.1/Cliptext-Installer-Mac.zip)** · Apple Silicon (M1 or later) · macOS 15.6 or later · Beta
+
+1. Unzip the download and open **Cliptext Installer**.
+2. Click **Download Cliptext**. The installer downloads and verifies the 5.56 GB disk image, then opens it. Allow about 15 GB of free space for the download and the installed app.
+3. Drag **Cliptext** to **Applications**, eject the disk image, and open Cliptext from Applications.
+
+The beta uses an ad-hoc signature and has not been notarized by Apple. macOS may ask for per-app approval the first time you open the installer or Cliptext. See [Apple's first-launch instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac) and the [release notes](https://github.com/noestradamus/Cliptext/releases/tag/v0.4.1-beta.1).
+
+## Features
 
 - Paste TikTok, YouTube, or Instagram links.
 - Transcribe speech with Whisper large-v3 through MLX.
@@ -18,11 +28,7 @@ The interface, SQLite database, media processing, and AI models run on each user
 - Queue shared links on Android until the Mac is reachable, then retain synced transcripts for offline reading.
 - Install the iPhone PWA for offline transcripts and use a local-file-backed Save to Cliptext Shortcut.
 
-**Sequoia tester target:** Apple Silicon, macOS 15.6 or later; Android 8.0 or later for the companion. This is a private tester build with an ad-hoc signature. Native deployment-target checks and tests on the build Mac do not establish acceptance on a physical Mac running 15.6. See the [Mac and iPhone tester guide](docs/testing/sequoia-tester.md) for installation and the remaining device checks.
-
-For iPhone installation, private HTTPS, offline behavior, and the Share-menu Shortcuts, see [iPhone setup](docs/iphone.md). The PWA syncs while open; Shortcuts retain their own local outbox when the Mac cannot be reached.
-
-The tester disk image is prepared separately from this source repository. It includes the app, models, runtimes, and a short setup guide. The recipient starts with their own empty library and creates their own phone connections. They do not need developer tools, a Sites account, or access to another user's Cliptext installation.
+The Android companion supports Android 8.0 or later. For iPhone installation and the Share-menu Shortcuts, see [iPhone setup](docs/iphone.md). Physical testing on an M2 running macOS 15.6 and on an iPhone is still pending. See the [Mac and iPhone tester guide](docs/testing/sequoia-tester.md).
 
 ## What is in this repository
 
@@ -88,7 +94,7 @@ Public retrieval does not import browser logins. Posts that require account acce
 
 Unit tests use synthetic identifiers and data. The optional live verification runner requires an explicit `--url`; it contains no saved personal example.
 
-## Before a public release
+## Before a stable release
 
 - Complete Sequoia 15.6 installation and inference checks on a second Mac, plus the real iPhone TikTok Share-menu and offline checks.
 - Complete native signing/notarization and binary-distribution license obligations.
