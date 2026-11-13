@@ -1,6 +1,6 @@
 # Third-party notices
 
-This private snapshot contains Cliptext source and build manifests. It contains no packaged Python/Node runtime, compiled media tools, or model weights. Cliptext's own code currently has no chosen license (`UNLICENSED` in `package.json`). This document does not assign ownership or grant a license to that code.
+This repository contains Cliptext source and build manifests. The Mac beta includes the packaged runtimes, media tools, and models. Cliptext's own code currently has no chosen license (`UNLICENSED` in `package.json`).
 
 Third-party components retain their own copyright and license terms. A binary distribution must carry the notices, license texts, and other materials required by the exact components it includes.
 
@@ -49,6 +49,6 @@ Keep those notices with redistributed font files and observe the applicable attr
 
 The packaging script accepts externally supplied FFmpeg and FFprobe executables and copies their non-system library dependencies. Their license obligations depend on the selected build configuration and dependency closure. The current prototype's selected FFmpeg build has GPL and version-3 features enabled; it must not be treated as an LGPL-only build.
 
-**Public binary redistribution is pending a complete corresponding-source and license-compliance package for the selected FFmpeg build and its dependencies.** The scripts collect available license files and build receipts, but those alone do not provide complete corresponding source or establish redistribution readiness. The source-only snapshot includes no FFmpeg/FFprobe binaries.
+For the 0.4.1 Mac beta, open **Source Materials** in the disk image for the upstream FFmpeg, media-library and Node source archives, build recipes, redistribution notices and checksums. The release also provides supplemental source and notices for the bundled runtimes. [Mac beta release](https://github.com/noestradamus/Cliptext/releases/tag/v0.4.1-beta.1)
 
-The app and runtime builders mark their outputs as prototypes that are not ready for public distribution. Ad-hoc signing and a successful runtime audit do not resolve licensing or notarization requirements.
+The generic packaging scripts produce ad-hoc signed prototypes. Future builds need source materials and notices matching their own dependency versions and configurations.
